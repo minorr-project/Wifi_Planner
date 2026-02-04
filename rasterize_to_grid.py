@@ -1,16 +1,14 @@
+import os
 import numpy as np
 import json
 import math
 import matplotlib.pyplot as plt
 
-def crop_grid_to_walls(grid, margin=20):
-    """
-    Crops grid to the bounding box of wall cells (grid==1),
-    with extra margin (in grid cells).
-    Returns cropped_grid and crop metadata.
-    """
-   
+WALL_FACES_FILE = "wall_faces_xy.npy"
+GRID_FILE_FALLBACK = "grid.npy"  # produced by dxf_to_grid.py
 
+
+def crop_grid_to_walls(grid, margin=20):
     ys, xs = np.where(grid > 0)
     if len(xs) == 0 or len(ys) == 0:
         return grid, {"cropped": False, "reason": "no wall cells found"}
@@ -34,12 +32,25 @@ def crop_grid_to_walls(grid, margin=20):
     return cropped, info
 
 
-WALL_FACES_FILE = "wall_faces_xy.npy"
+def load_faces_if_valid(path: str):
+    """Return faces array if it exists and contains at least 1 face; else return None."""
+    if not os.path.exists(path):
+        return None
 
-def load_faces(path: str):
     faces = np.load(path, allow_pickle=True)
-    # faces is a list-like of 4-point polygons: [[(x,y),...], ...]
+
+    # empty file case
+    if faces is None or faces.size == 0 or len(faces) == 0:
+        return None
+
+    # Basic shape sanity: expect list-like of polygons
+    try:
+        _ = faces[0]
+    except Exception:
+        return None
+
     return faces
+
 
 def compute_bounds(faces):
     xs = []
@@ -48,13 +59,12 @@ def compute_bounds(faces):
         for (x, y) in poly:
             xs.append(float(x))
             ys.append(float(y))
+    if not xs or not ys:
+        raise ValueError("compute_bounds() got empty faces.")
     return min(xs), min(ys), max(xs), max(ys)
 
+
 def rasterize_faces_to_grid(faces, cell_size=0.25, face_sample_step=0.05):
-    """
-    cell_size: grid cell size in DXF units (often meters, or inches/feet depending on export).
-    face_sample_step: sampling resolution along edges (smaller = more accurate but slower).
-    """
     minx, miny, maxx, maxy = compute_bounds(faces)
 
     width = maxx - minx
@@ -65,21 +75,23 @@ def rasterize_faces_to_grid(faces, cell_size=0.25, face_sample_step=0.05):
 
     grid = np.zeros((gh, gw), dtype=np.uint8)
 
-    # Helper: mark a point in grid
     def mark_point(x, y):
         gx = int((x - minx) / cell_size)
         gy = int((y - miny) / cell_size)
         if 0 <= gx < gw and 0 <= gy < gh:
             grid[gy, gx] = 1
 
-    # Sample edges of each face (good enough for wall footprint)
     for poly in faces:
         pts = [(float(x), float(y)) for (x, y) in poly]
 
-        # close polygon loop
-        for i in range(4):
+        # Use all edges in the polygon (not assuming exactly 4 points)
+        n = len(pts)
+        if n < 2:
+            continue
+
+        for i in range(n):
             x1, y1 = pts[i]
-            x2, y2 = pts[(i + 1) % 4]
+            x2, y2 = pts[(i + 1) % n]
 
             dx = x2 - x1
             dy = y2 - y1
@@ -93,6 +105,7 @@ def rasterize_faces_to_grid(faces, cell_size=0.25, face_sample_step=0.05):
                 mark_point(x, y)
 
     meta = {
+        "source": "3DFACE",
         "cell_size": cell_size,
         "bounds": {"minx": float(minx), "miny": float(miny), "maxx": float(maxx), "maxy": float(maxy)},
         "grid_shape": [int(gh), int(gw)],
@@ -102,33 +115,8 @@ def rasterize_faces_to_grid(faces, cell_size=0.25, face_sample_step=0.05):
 
     return grid, meta
 
-def save_outputs(grid, meta):
-    import numpy as np
-    import json
-    import matplotlib.pyplot as plt
-
-    np.save("grid.npy", grid)
-
-    with open("grid_meta.json", "w") as f:
-        json.dump(meta, f, indent=2)
-
-    # Human-friendly preview: show walls as white pixels
-    plt.figure(figsize=(8, 8))
-    plt.imshow(grid == 1, origin="lower")  # boolean image: walls only
-    plt.axis("off")
-    plt.tight_layout()
-    plt.savefig("grid_preview.png", dpi=200)
-    plt.close()
-
-    print("Saved grid.npy, grid_meta.json, grid_preview.png")
-    print("Grid shape:", grid.shape)
 
 def keep_largest_wall_component(grid):
-    """
-    Keeps only the largest connected component of wall cells.
-    Removes tiny specks scattered across the drawing.
-    Uses 8-connectivity. Returns cleaned_grid.
-    """
     from collections import deque
 
     H, W = grid.shape
@@ -138,7 +126,6 @@ def keep_largest_wall_component(grid):
     best_count = 0
     best_cells = None
 
-    # 8 directions
     dirs = [(-1,-1), (-1,0), (-1,1),
             (0,-1),          (0,1),
             (1,-1),  (1,0),  (1,1)]
@@ -171,42 +158,68 @@ def keep_largest_wall_component(grid):
         return cleaned
 
     for r, c in best_cells:
-        cleaned[r, c] = 1  # keep as wall
-
+        cleaned[r, c] = 1
     return cleaned
 
 
+def save_outputs(grid, meta):
+    np.save("grid.npy", grid)
+    with open("grid_meta.json", "w") as f:
+        json.dump(meta, f, indent=2)
+
+    plt.figure(figsize=(8, 8))
+    plt.imshow(grid == 1, origin="lower")
+    plt.axis("off")
+    plt.tight_layout()
+    plt.savefig("grid_preview.png", dpi=200)
+    plt.close()
+
+    print("Saved grid.npy, grid_meta.json, grid_preview.png")
+    print("Grid shape:", grid.shape)
+
+
 if __name__ == "__main__":
-    faces = load_faces(WALL_FACES_FILE)
-    print("Loaded faces:", len(faces))
+    # 1) Try 3DFACE path
+    faces = load_faces_if_valid(WALL_FACES_FILE)
 
-    # Start with a coarse-ish cell size so it runs fast.
-    # We can refine later (0.5, 0.25, 0.1...)
-    grid, meta = rasterize_faces_to_grid(
-    faces,
-    cell_size=1.5,
-    face_sample_step=0.3
-)
+    if faces is not None:
+        print("Loaded faces:", len(faces))
+        grid, meta = rasterize_faces_to_grid(
+            faces,
+            cell_size=1.5,
+            face_sample_step=0.3
+        )
+    else:
+        # 2) Fallback: use 2D grid generated by dxf_to_grid.py
+        if not os.path.exists(GRID_FILE_FALLBACK):
+            raise RuntimeError(
+                "No valid 3DFACE walls found (wall_faces_xy.npy missing/empty) AND grid.npy not found.\n"
+                "Run dxf_to_grid.py first to generate grid.npy for 2D DXF floorplans."
+            )
 
+        grid = np.load(GRID_FILE_FALLBACK).astype(np.uint8)
+        meta = {
+            "source": "2D_GRID_FALLBACK",
+            "cell_size": None,
+            "codes": {"FREE": 0, "WALL": 1},
+            "notes": "Loaded existing grid.npy generated from LINE/LWPOLYLINE DXF extraction."
+        }
+        print("Using fallback grid.npy:", grid.shape)
 
-print("Grid shape BEFORE cleanup:", grid.shape)
-print("Wall cells BEFORE cleanup:", int(grid.sum()))
+    print("Grid shape BEFORE cleanup:", grid.shape)
+    print("Wall cells BEFORE cleanup:", int(grid.sum()))
 
-# ✅ Remove speck noise
-grid_clean = keep_largest_wall_component(grid)
+    grid_clean = keep_largest_wall_component(grid)
 
-print("Wall cells AFTER cleanup:", int(grid_clean.sum()))
+    print("Wall cells AFTER cleanup:", int(grid_clean.sum()))
 
-# ✅ Now crop
-grid_cropped, crop_info = crop_grid_to_walls(grid_clean, margin=20)
+    grid_cropped, crop_info = crop_grid_to_walls(grid_clean, margin=20)
 
-print("Grid shape AFTER crop:", grid_cropped.shape)
-print("Wall cells AFTER crop:", int(grid_cropped.sum()))
+    print("Grid shape AFTER crop:", grid_cropped.shape)
+    print("Wall cells AFTER crop:", int(grid_cropped.sum()))
 
-meta["crop"] = crop_info
-meta["cleanup"] = {"method": "largest_connected_component"}
+    meta["crop"] = crop_info
+    meta["cleanup"] = {"method": "largest_connected_component"}
 
-save_outputs(grid_cropped, meta)
-print("Saved CLEANED+CROPPED: grid.npy, grid_meta.json, grid_preview.png")
-
-
+    save_outputs(grid_cropped, meta)
+    print("Saved CLEANED+CROPPED: grid.npy, grid_meta.json, grid_preview.png")
