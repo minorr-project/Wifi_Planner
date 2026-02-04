@@ -23,3 +23,6 @@ grid_preview.png
 house.dxf
 wall_faces_xy.npy
 
+grid_meta.json
+*.npy
+
