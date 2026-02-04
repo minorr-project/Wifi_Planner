@@ -1,6 +1,13 @@
 """
 Genetic Algorithm core for optimizing Wi-Fi router placement.
-Works with member_B_signal_simulation_engine.signal_physics.fitness_function.
+
+Assumptions / Integration:
+- Grid format (Member C):
+    grid[y][x] == 0 -> FREE
+    grid[y][x] == 1 -> WALL
+- Fitness function (Member B):
+    fitness_function(routers, grid, beta=...)
+  where routers is List[(x, y)]
 """
 
 from __future__ import annotations
@@ -8,8 +15,12 @@ from __future__ import annotations
 import random
 from typing import List, Tuple, Optional, Dict, Any
 
+# ------------------------------------------------------------
+# Import fitness_function (edit ONLY this line if your file name differs)
+# ------------------------------------------------------------
 try:
-    from member_B_signal_simulation_engine.signal_physics import fitness_function
+    # Change 'signal_math' to the actual filename that contains fitness_function
+    from member_B_signal_simulation_engine.signal_math import fitness_function
 except ModuleNotFoundError:
     # Allow running this file directly without setting PYTHONPATH
     import os
@@ -18,26 +29,57 @@ except ModuleNotFoundError:
     repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
     if repo_root not in sys.path:
         sys.path.insert(0, repo_root)
-    from member_B_signal_simulation_engine.signal_physics import fitness_function
 
-Cell = Tuple[int, int]  # (x, y)
-Individual = List[Cell]
+    from member_B_signal_simulation_engine.signal_math import fitness_function
 
 
+Cell = Tuple[int, int]        # (x, y)
+Individual = List[Cell]       # routers list
+
+
+# ------------------------------------------------------------
+# Helpers: support numpy arrays OR list-of-lists grids
+# ------------------------------------------------------------
+def _grid_shape(grid) -> Tuple[int, int]:
+    """Return (H, W) for numpy array or list-of-lists."""
+    try:
+        # numpy array
+        h, w = grid.shape
+        return int(h), int(w)
+    except Exception:
+        # list-of-lists
+        h = len(grid)
+        w = len(grid[0]) if h else 0
+        return h, w
+
+
+def _grid_get(grid, y: int, x: int) -> int:
+    """Get cell value (0/1) for numpy array or list-of-lists."""
+    try:
+        return int(grid[y, x])  # numpy
+    except Exception:
+        return int(grid[y][x])  # list-of-lists
+
+
+# ------------------------------------------------------------
+# Candidate extraction (FREE cells only)
+# ------------------------------------------------------------
 def get_free_cells(grid) -> List[Cell]:
-    """Collect all FREE cells as candidate router locations."""
+    """Collect all FREE cells (value==0) as candidate router locations."""
     free_cells: List[Cell] = []
-    height = len(grid)
-    if height == 0:
-        return free_cells
-    width = len(grid[0])
-    for y in range(height):
-        for x in range(width):
-            if grid[y][x] == "FREE":
+    H, W = _grid_shape(grid)
+
+    for y in range(H):
+        for x in range(W):
+            if _grid_get(grid, y, x) == 0:
                 free_cells.append((x, y))
+
     return free_cells
 
 
+# ------------------------------------------------------------
+# GA operators
+# ------------------------------------------------------------
 def random_individual(
     num_routers: int,
     candidates: List[Cell],
@@ -56,8 +98,8 @@ def tournament_selection(
     rng: random.Random,
 ) -> Individual:
     """Pick the best among k randomly chosen individuals."""
-    chosen_indices = rng.sample(range(len(population)), k)
-    best_idx = max(chosen_indices, key=lambda i: fitnesses[i])
+    chosen = rng.sample(range(len(population)), k)
+    best_idx = max(chosen, key=lambda i: fitnesses[i])
     return population[best_idx]
 
 
@@ -71,6 +113,7 @@ def crossover(
         raise ValueError("Parents must have same length")
     if len(parent_a) < 2:
         return parent_a[:], parent_b[:]
+
     cut = rng.randint(1, len(parent_a) - 1)
     child1 = parent_a[:cut] + parent_b[cut:]
     child2 = parent_b[:cut] + parent_a[cut:]
@@ -82,18 +125,29 @@ def repair_individual(
     candidates: List[Cell],
     rng: random.Random,
 ) -> Individual:
-    """Ensure all router positions are unique and valid candidates."""
-    unique = []
+    """
+    Ensure all router positions are unique and valid candidates.
+    If duplicates exist, replace them with unused candidates.
+    """
     seen = set()
+    unique: Individual = []
+
     for cell in indiv:
-        if cell not in seen:
+        if cell in candidates and cell not in seen:
             unique.append(cell)
             seen.add(cell)
+
+    # Fill missing routers if any were removed
     if len(unique) < len(indiv):
         remaining = [c for c in candidates if c not in seen]
         needed = len(indiv) - len(unique)
         if needed > 0:
-            unique.extend(rng.sample(remaining, needed))
+            if needed > len(remaining):
+                # fallback: allow reusing remaining if extremely constrained
+                unique.extend(rng.choices(candidates, k=needed))
+            else:
+                unique.extend(rng.sample(remaining, needed))
+
     return unique
 
 
@@ -111,6 +165,9 @@ def mutate(
     return new_indiv
 
 
+# ------------------------------------------------------------
+# Fitness evaluation
+# ------------------------------------------------------------
 def evaluate_population(
     population: List[Individual],
     grid,
@@ -120,6 +177,9 @@ def evaluate_population(
     return [fitness_function(indiv, grid, beta=beta) for indiv in population]
 
 
+# ------------------------------------------------------------
+# Main GA loop
+# ------------------------------------------------------------
 def run_ga(
     grid,
     num_routers: int,
@@ -146,7 +206,7 @@ def run_ga(
     if candidates is None:
         candidates = get_free_cells(grid)
     if not candidates:
-        raise ValueError("No candidate cells available")
+        raise ValueError("No FREE candidate cells available (grid might be wrong).")
 
     population = [
         random_individual(num_routers, candidates, rng)
@@ -157,24 +217,28 @@ def run_ga(
     best_routers: Individual = []
     best_fitness = float("-inf")
 
-    for _ in range(generations):
+    for _gen in range(generations):
         fitnesses = evaluate_population(population, grid, beta)
 
-        # Track best
+        # Track best in this generation
         gen_best_idx = max(range(len(population)), key=lambda i: fitnesses[i])
         gen_best_fit = fitnesses[gen_best_idx]
         if gen_best_fit > best_fitness:
             best_fitness = gen_best_fit
             best_routers = population[gen_best_idx][:]
+
         history.append(gen_best_fit)
 
-        # Elitism
+        # Elitism: keep top elite_size
         elite_indices = sorted(
-            range(len(population)), key=lambda i: fitnesses[i], reverse=True
+            range(len(population)),
+            key=lambda i: fitnesses[i],
+            reverse=True
         )[:elite_size]
-        new_population = [population[i][:] for i in elite_indices]
 
-        # Produce offspring
+        new_population: List[Individual] = [population[i][:] for i in elite_indices]
+
+        # Create the rest
         while len(new_population) < population_size:
             parent_a = tournament_selection(population, fitnesses, tournament_k, rng)
             parent_b = tournament_selection(population, fitnesses, tournament_k, rng)
@@ -186,6 +250,7 @@ def run_ga(
 
             child1 = mutate(child1, candidates, mutation_rate, rng)
             child2 = mutate(child2, candidates, mutation_rate, rng)
+
             child1 = repair_individual(child1, candidates, rng)
             child2 = repair_individual(child2, candidates, rng)
 
@@ -202,10 +267,20 @@ def run_ga(
     }
 
 
+# ------------------------------------------------------------
+# Smoke test
+# ------------------------------------------------------------
 if __name__ == "__main__":
-    # Minimal smoke test (uses a tiny dummy grid)
-    # grid with "FREE" everywhere
-    grid = [["FREE" for _ in range(10)] for _ in range(10)]
-    result = run_ga(grid, num_routers=2, generations=10, seed=42)
-    print("Best routers:", result["best_routers"])
-    print("Best fitness:", result["best_fitness"])
+    try:
+        import numpy as np
+
+        # 0=free, 1=wall
+        grid = np.zeros((20, 20), dtype=int)
+        grid[:, 10] = 1  # vertical wall
+
+        result = run_ga(grid, num_routers=2, generations=20, seed=42)
+        print("Best routers:", result["best_routers"])
+        print("Best fitness:", result["best_fitness"])
+        print("History (first 5):", result["history"][:5])
+    except Exception as e:
+        print("GA smoke test failed:", e)
