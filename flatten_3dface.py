@@ -26,6 +26,8 @@ if __name__ == "__main__":
     polys = extract_3dface_polygons(DXF_FILE)
     print(f"Extracted {len(polys)} wall faces")
 
-    # save for next step
-    np.save("wall_faces_xy.npy", polys)
-    print("Saved wall_faces_xy.npy")
+    if len(polys) == 0:
+        print("No 3DFACE entities found. Not saving wall_faces_xy.npy.")
+    else:
+        np.save("wall_faces_xy.npy", polys)
+        print("Saved wall_faces_xy.npy")

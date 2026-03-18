@@ -1,0 +1,48 @@
+{
+  "routers": [
+    {
+      "x": 896,
+      "y": 168
+    },
+    {
+      "x": 680,
+      "y": 624
+    },
+    {
+      "x": 352,
+      "y": 200
+    }
+  ],
+  "coverage_percent": 100.0,
+  "average_signal_dBm": -47.81660870231226,
+  "grid_meta": {
+    "source": "2D_GRID_FALLBACK",
+    "cell_size": null,
+    "codes": {
+      "FREE": 0,
+      "WALL": 1
+    },
+    "notes": "Loaded existing grid.npy generated from LINE/LWPOLYLINE DXF extraction.",
+    "crop": {
+      "cropped": true,
+      "crop_box": {
+        "y_min": 0,
+        "y_max": 905,
+        "x_min": 115,
+        "x_max": 806
+      },
+      "original_shape": [
+        906,
+        1104
+      ],
+      "cropped_shape": [
+        906,
+        692
+      ]
+    },
+    "cleanup": {
+      "method": "largest_connected_component"
+    },
+    "downsample_factor": 8
+  }
+}

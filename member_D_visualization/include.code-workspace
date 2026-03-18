@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"path": "../../Desktop/CG_project/GLAD/include"
+		},
+		{
+			"path": "../../Desktop/CG_project/GLAD/src"
+		}
+	],
+	"launch": {
+		"version": "0.2.0",
+		"configurations": []
+	}
+}
