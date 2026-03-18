@@ -22,46 +22,32 @@
       align-items: center;
       gap: 14px;
     }
-
     header .logo {
-      width: 38px;
-      height: 38px;
+      width: 38px; height: 38px;
       background: linear-gradient(135deg, #4facfe, #00f2fe);
       border-radius: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      display: flex; align-items: center; justify-content: center;
       font-size: 20px;
     }
-
     header h1 {
-      font-size: 20px;
-      font-weight: 700;
+      font-size: 20px; font-weight: 700;
       background: linear-gradient(135deg, #4facfe, #00f2fe);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
     }
+    header p { font-size: 13px; color: #718096; margin-top: 2px; }
 
-    header p {
-      font-size: 13px;
-      color: #718096;
-      margin-top: 2px;
-    }
-
-    .container {
-      max-width: 1100px;
-      margin: 0 auto;
-      padding: 32px 24px;
+    .layout {
       display: grid;
       grid-template-columns: 340px 1fr;
       gap: 24px;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 32px 24px;
       align-items: start;
     }
+    @media (max-width: 860px) { .layout { grid-template-columns: 1fr; } }
 
-    @media (max-width: 800px) {
-      .container { grid-template-columns: 1fr; }
-    }
+    .left-col { display: flex; flex-direction: column; gap: 20px; }
 
     .card {
       background: #1a1f2e;
@@ -69,244 +55,194 @@
       border-radius: 14px;
       padding: 24px;
     }
-
     .card h2 {
-      font-size: 14px;
-      font-weight: 600;
-      color: #a0aec0;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      margin-bottom: 16px;
+      font-size: 13px; font-weight: 600; color: #a0aec0;
+      text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 16px;
     }
 
     /* Drop zone */
     .dropzone {
-      border: 2px dashed #2d3748;
-      border-radius: 10px;
-      padding: 28px 16px;
-      text-align: center;
-      cursor: pointer;
-      transition: all 0.2s;
-      position: relative;
+      border: 2px dashed #2d3748; border-radius: 10px;
+      padding: 28px 16px; text-align: center; cursor: pointer;
+      transition: all 0.2s; position: relative;
     }
     .dropzone:hover, .dropzone.drag-over {
-      border-color: #4facfe;
-      background: rgba(79,172,254,0.05);
+      border-color: #4facfe; background: rgba(79,172,254,0.05);
     }
     .dropzone input[type="file"] {
       position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
     }
-    .dropzone .icon {
-      font-size: 32px;
-      margin-bottom: 10px;
-    }
-    .dropzone p {
-      font-size: 14px;
-      color: #718096;
-    }
-    .dropzone p span {
-      color: #4facfe;
-      font-weight: 500;
-    }
-    .dropzone .hint {
-      font-size: 12px;
-      color: #4a5568;
-      margin-top: 6px;
-    }
+    .dropzone .icon { font-size: 32px; margin-bottom: 10px; }
+    .dropzone p { font-size: 14px; color: #718096; }
+    .dropzone p span { color: #4facfe; font-weight: 500; }
+    .dropzone .hint { font-size: 12px; color: #4a5568; margin-top: 6px; }
 
     .file-badge {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      background: rgba(79,172,254,0.08);
-      border: 1px solid rgba(79,172,254,0.25);
-      border-radius: 8px;
-      padding: 10px 14px;
-      margin-top: 14px;
-      font-size: 13px;
+      display: flex; align-items: center; gap: 10px;
+      background: rgba(79,172,254,0.08); border: 1px solid rgba(79,172,254,0.25);
+      border-radius: 8px; padding: 10px 14px; margin-top: 14px; font-size: 13px;
     }
     .file-badge .dot {
-      width: 8px; height: 8px;
-      background: #48bb78;
-      border-radius: 50%;
-      flex-shrink: 0;
+      width: 8px; height: 8px; background: #48bb78; border-radius: 50%; flex-shrink: 0;
     }
     .file-badge span { color: #e2e8f0; font-weight: 500; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
     .btn {
-      display: block;
-      width: 100%;
-      padding: 12px;
-      border: none;
-      border-radius: 9px;
-      font-size: 14px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s;
-      margin-top: 14px;
-      letter-spacing: 0.02em;
+      display: block; width: 100%; padding: 12px; border: none;
+      border-radius: 9px; font-size: 14px; font-weight: 600;
+      cursor: pointer; transition: all 0.2s; margin-top: 14px; letter-spacing: 0.02em;
     }
-    .btn-primary {
-      background: linear-gradient(135deg, #4facfe, #00f2fe);
-      color: #0f1117;
-    }
-    .btn-primary:hover:not(:disabled) {
-      opacity: 0.9;
-      transform: translateY(-1px);
-    }
-    .btn-primary:disabled {
-      opacity: 0.4;
-      cursor: not-allowed;
-    }
+    .btn-primary { background: linear-gradient(135deg, #4facfe, #00f2fe); color: #0f1117; }
+    .btn-primary:hover:not(:disabled) { opacity: 0.9; transform: translateY(-1px); }
+    .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
 
-    /* Status */
+    .btn-secondary {
+      background: linear-gradient(135deg, #667eea, #764ba2); color: #fff;
+    }
+    .btn-secondary:hover:not(:disabled) { opacity: 0.9; transform: translateY(-1px); }
+    .btn-secondary:disabled { opacity: 0.4; cursor: not-allowed; }
+
     .status-box {
-      border-radius: 9px;
-      padding: 12px 14px;
-      font-size: 13px;
-      margin-top: 14px;
-      display: none;
+      border-radius: 9px; padding: 12px 14px; font-size: 13px;
+      margin-top: 14px; display: none;
     }
     .status-box.info { background: rgba(79,172,254,0.1); border: 1px solid rgba(79,172,254,0.2); color: #90cdf4; }
     .status-box.success { background: rgba(72,187,120,0.1); border: 1px solid rgba(72,187,120,0.2); color: #9ae6b4; }
     .status-box.error { background: rgba(252,129,74,0.1); border: 1px solid rgba(252,129,74,0.2); color: #fbb6a0; }
 
     .progress-bar-wrap {
-      background: #2d3748;
-      border-radius: 999px;
-      height: 6px;
-      margin-top: 10px;
-      overflow: hidden;
-      display: none;
+      background: #2d3748; border-radius: 999px; height: 6px;
+      margin-top: 10px; overflow: hidden; display: none;
     }
     .progress-bar {
-      height: 100%;
-      background: linear-gradient(135deg, #4facfe, #00f2fe);
-      border-radius: 999px;
-      width: 0%;
-      transition: width 0.4s;
+      height: 100%; background: linear-gradient(135deg, #4facfe, #00f2fe);
+      border-radius: 999px; width: 0%; transition: width 0.4s;
     }
+    .progress-bar.purple { background: linear-gradient(135deg, #667eea, #764ba2); }
 
     .spinner {
-      display: inline-block;
-      width: 12px; height: 12px;
-      border: 2px solid rgba(79,172,254,0.3);
-      border-top-color: #4facfe;
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-      margin-right: 6px;
-      vertical-align: middle;
+      display: inline-block; width: 12px; height: 12px;
+      border: 2px solid rgba(79,172,254,0.3); border-top-color: #4facfe;
+      border-radius: 50%; animation: spin 0.8s linear infinite;
+      margin-right: 6px; vertical-align: middle;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
 
+    /* Strategy selector */
+    .strategy-group { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+    .strategy-option {
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 10px 14px; border-radius: 9px; border: 1px solid #2d3748;
+      cursor: pointer; transition: all 0.2s; background: #0f1117;
+    }
+    .strategy-option:hover { border-color: #667eea; }
+    .strategy-option.selected { border-color: #667eea; background: rgba(102,126,234,0.1); }
+    .strategy-option input[type="radio"] { margin-top: 2px; accent-color: #667eea; }
+    .strategy-option .s-label { font-size: 13px; font-weight: 600; color: #e2e8f0; }
+    .strategy-option .s-desc { font-size: 11px; color: #718096; margin-top: 2px; }
+
+    .router-input-row {
+      display: flex; align-items: center; gap: 10px; margin-bottom: 4px;
+    }
+    .router-input-row label { font-size: 13px; color: #a0aec0; flex: 1; }
+    .router-input-row input[type="number"] {
+      width: 70px; padding: 7px 10px; border-radius: 7px;
+      border: 1px solid #2d3748; background: #0f1117; color: #e2e8f0;
+      font-size: 14px; font-weight: 600; text-align: center;
+    }
+    .router-input-row input:focus { outline: none; border-color: #667eea; }
+
     /* Meta stats */
-    .meta-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-      margin-top: 4px;
-    }
+    .meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 4px; }
     .meta-item {
-      background: #0f1117;
-      border: 1px solid #2d3748;
-      border-radius: 8px;
-      padding: 10px 12px;
+      background: #0f1117; border: 1px solid #2d3748; border-radius: 8px; padding: 10px 12px;
     }
-    .meta-item .label {
-      font-size: 11px;
-      color: #4a5568;
-      text-transform: uppercase;
-      letter-spacing: 0.07em;
-      margin-bottom: 4px;
-    }
-    .meta-item .value {
-      font-size: 16px;
-      font-weight: 700;
-      color: #e2e8f0;
-    }
-    .meta-item .unit {
-      font-size: 11px;
-      color: #718096;
-      font-weight: 400;
-    }
+    .meta-item .label { font-size: 11px; color: #4a5568; text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 4px; }
+    .meta-item .value { font-size: 16px; font-weight: 700; color: #e2e8f0; }
+    .meta-item .unit { font-size: 11px; color: #718096; font-weight: 400; }
 
     /* Downloads */
     .download-list { margin-top: 4px; display: flex; flex-direction: column; gap: 8px; }
     .download-item {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 10px 14px;
-      background: #0f1117;
-      border: 1px solid #2d3748;
-      border-radius: 8px;
-      text-decoration: none;
-      color: #e2e8f0;
-      font-size: 13px;
-      transition: all 0.2s;
+      display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+      background: #0f1117; border: 1px solid #2d3748; border-radius: 8px;
+      text-decoration: none; color: #e2e8f0; font-size: 13px; transition: all 0.2s;
     }
-    .download-item:hover {
-      border-color: #4facfe;
-      color: #4facfe;
-    }
+    .download-item:hover { border-color: #4facfe; color: #4facfe; }
     .download-item .icon { font-size: 18px; flex-shrink: 0; }
     .download-item .name { flex: 1; font-weight: 500; }
     .download-item .desc { font-size: 11px; color: #4a5568; }
     .download-item .arrow { color: #4a5568; font-size: 14px; }
 
-    /* Preview panel */
-    .preview-panel {
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
+    /* Right panel */
+    .right-col { display: flex; flex-direction: column; gap: 24px; }
+
+    /* Tabs */
+    .panel-tabs {
+      display: flex; gap: 4px; border-bottom: 1px solid #2d3748; margin-bottom: 0;
+    }
+    .panel-tab {
+      padding: 8px 18px; border-radius: 8px 8px 0 0; border: 1px solid transparent;
+      background: transparent; color: #718096; font-size: 13px; font-weight: 600;
+      cursor: pointer; transition: all 0.2s; border-bottom: none;
+    }
+    .panel-tab.active {
+      background: #1a1f2e; border-color: #2d3748; color: #4facfe;
+      border-bottom-color: #1a1f2e;
     }
 
     .preview-wrap {
-      background: #0a0d14;
-      border: 1px solid #2d3748;
-      border-radius: 14px;
-      overflow: hidden;
-      min-height: 340px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      position: relative;
+      background: #0a0d14; border: 1px solid #2d3748; border-radius: 0 14px 14px 14px;
+      overflow: hidden; min-height: 380px;
+      display: flex; align-items: center; justify-content: center; position: relative;
     }
-    .preview-wrap img {
-      max-width: 100%;
-      max-height: 560px;
-      object-fit: contain;
-      display: block;
-    }
-    .preview-wrap .placeholder {
-      text-align: center;
-      color: #4a5568;
-    }
+    .preview-wrap img { max-width: 100%; max-height: 580px; object-fit: contain; display: block; }
+    .preview-wrap .placeholder { text-align: center; color: #4a5568; }
     .preview-wrap .placeholder .big-icon { font-size: 56px; margin-bottom: 12px; }
     .preview-wrap .placeholder p { font-size: 14px; }
 
     .preview-label {
-      position: absolute;
-      top: 12px;
-      left: 12px;
-      background: rgba(15,17,23,0.85);
-      border: 1px solid #2d3748;
-      border-radius: 6px;
-      padding: 4px 10px;
-      font-size: 11px;
-      color: #718096;
+      position: absolute; top: 12px; left: 12px;
+      background: rgba(15,17,23,0.85); border: 1px solid #2d3748;
+      border-radius: 6px; padding: 4px 10px; font-size: 11px; color: #718096;
       backdrop-filter: blur(4px);
     }
 
+    /* Grid preview sub-tabs */
+    .sub-tabs { display: flex; gap: 6px; padding: 12px 12px 0; }
+    .sub-tab {
+      padding: 5px 12px; border-radius: 6px; border: 1px solid #2d3748;
+      background: #0f1117; color: #718096; font-size: 11px; font-weight: 600;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .sub-tab.active { background: #1a1f2e; color: #4facfe; border-color: #4facfe; }
+
     .legend {
-      display: flex;
-      gap: 20px;
-      font-size: 12px;
-      color: #718096;
-      align-items: center;
+      display: flex; gap: 20px; font-size: 12px; color: #718096; align-items: center; padding: 10px 14px;
     }
     .legend-item { display: flex; align-items: center; gap: 6px; }
     .legend-dot { width: 10px; height: 10px; border-radius: 2px; }
+
+    /* Coverage metrics */
+    .metrics-row {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 0 2px;
+    }
+    .metric-card {
+      background: #0f1117; border: 1px solid #2d3748; border-radius: 10px;
+      padding: 14px 18px; text-align: center;
+    }
+    .metric-card .m-label { font-size: 11px; color: #4a5568; text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 6px; }
+    .metric-card .m-value { font-size: 26px; font-weight: 800; }
+    .metric-card .m-value.green { color: #48bb78; }
+    .metric-card .m-value.blue { color: #4facfe; }
+
+    .strategy-badge {
+      display: inline-block; padding: 3px 10px; border-radius: 20px;
+      font-size: 11px; font-weight: 600; margin-bottom: 10px;
+    }
+    .strategy-badge.ga { background: rgba(72,187,120,0.15); color: #48bb78; border: 1px solid rgba(72,187,120,0.3); }
+    .strategy-badge.random { background: rgba(237,137,54,0.15); color: #ed8936; border: 1px solid rgba(237,137,54,0.3); }
+    .strategy-badge.uniform { background: rgba(102,126,234,0.15); color: #667eea; border: 1px solid rgba(102,126,234,0.3); }
 
     .hidden { display: none !important; }
   </style>
@@ -317,13 +253,14 @@
   <div class="logo">📡</div>
   <div>
     <h1>WiFi Planner – Grid Generator</h1>
-    <p>Convert floor plans (DXF) into simulation-ready wall grids</p>
+    <p>Convert floor plans (DXF) into simulation-ready wall grids and optimize router placement</p>
   </div>
 </header>
 
-<div class="container">
-  <!-- Left column: controls -->
-  <div style="display: flex; flex-direction: column; gap: 20px;">
+<div class="layout">
+
+  <!-- ── Left column ── -->
+  <div class="left-col">
 
     <!-- Upload -->
     <div class="card">
@@ -341,52 +278,79 @@
       </div>
     </div>
 
-    <!-- Run -->
+    <!-- Grid pipeline -->
     <div class="card">
-      <h2>Pipeline</h2>
+      <h2>Grid Pipeline</h2>
       <p style="font-size:13px;color:#718096;line-height:1.6;">Auto-detects DXF entity types and chooses the best strategy (vector or render) to produce a binary wall grid.</p>
-      <button class="btn btn-primary" id="runBtn" onclick="runPipeline()">▶ Run Pipeline</button>
-
+      <button class="btn btn-primary" id="runBtn" onclick="runPipeline()" disabled>▶ Run Pipeline</button>
       <div class="status-box" id="statusBox"></div>
       <div class="progress-bar-wrap" id="progressWrap">
         <div class="progress-bar" id="progressBar"></div>
       </div>
     </div>
 
-    <!-- Downloads (hidden until ready) -->
-    <div class="card" id="downloadCard" style="display:none;">
-      <h2>Download Outputs</h2>
+    <!-- Optimization (shown once grid is ready) -->
+    <div class="card hidden" id="optimCard">
+      <h2>Router Optimization</h2>
+
+      <div class="router-input-row">
+        <label>Number of routers</label>
+        <input type="number" id="numRouters" value="2" min="1" max="20" />
+      </div>
+
+      <div class="strategy-group" id="strategyGroup">
+        <label class="strategy-option selected" onclick="selectStrategy('ga', this)">
+          <input type="radio" name="strategy" value="ga" checked />
+          <div>
+            <div class="s-label">🧬 Genetic Algorithm</div>
+            <div class="s-desc">Evolves a population over multiple generations to find the globally optimal placement</div>
+          </div>
+        </label>
+        <label class="strategy-option" onclick="selectStrategy('random', this)">
+          <input type="radio" name="strategy" value="random" />
+          <div>
+            <div class="s-label">🎲 Random Placement</div>
+            <div class="s-desc">Places routers at uniformly random free locations (reproducible baseline)</div>
+          </div>
+        </label>
+        <label class="strategy-option" onclick="selectStrategy('uniform', this)">
+          <input type="radio" name="strategy" value="uniform" />
+          <div>
+            <div class="s-label">📐 Uniform Grid</div>
+            <div class="s-desc">Divides the floor plan into equal zones and places one router per zone</div>
+          </div>
+        </label>
+      </div>
+
+      <button class="btn btn-secondary" id="optimBtn" onclick="runOptimization()">⚡ Run Optimization</button>
+      <div class="status-box" id="optimStatusBox"></div>
+      <div class="progress-bar-wrap" id="optimProgressWrap">
+        <div class="progress-bar purple" id="optimProgressBar"></div>
+      </div>
+    </div>
+
+    <!-- Downloads -->
+    <div class="card hidden" id="downloadCard">
+      <h2>Download Grid Outputs</h2>
       <div class="download-list">
         <a class="download-item" href="/api/download/grid_display" download>
           <span class="icon">🔢</span>
-          <div>
-            <div class="name">grid_display.npy</div>
-            <div class="desc">High-res display grid (NumPy array)</div>
-          </div>
+          <div><div class="name">grid_display.npy</div><div class="desc">High-res display grid (NumPy array)</div></div>
           <span class="arrow">↓</span>
         </a>
         <a class="download-item" href="/api/download/meta_display" download>
           <span class="icon">📋</span>
-          <div>
-            <div class="name">grid_display_meta.json</div>
-            <div class="desc">Display grid scale &amp; bounds metadata</div>
-          </div>
+          <div><div class="name">grid_display_meta.json</div><div class="desc">Display grid scale &amp; bounds metadata</div></div>
           <span class="arrow">↓</span>
         </a>
         <a class="download-item" href="/api/download/grid" download>
           <span class="icon">🗜️</span>
-          <div>
-            <div class="name">grid.npy</div>
-            <div class="desc">Optimization grid (4× downsampled)</div>
-          </div>
+          <div><div class="name">grid.npy</div><div class="desc">Optimization grid (4× downsampled)</div></div>
           <span class="arrow">↓</span>
         </a>
         <a class="download-item" href="/api/download/meta" download>
           <span class="icon">📄</span>
-          <div>
-            <div class="name">grid_meta.json</div>
-            <div class="desc">Optimization grid metadata</div>
-          </div>
+          <div><div class="name">grid_meta.json</div><div class="desc">Optimization grid metadata</div></div>
           <span class="arrow">↓</span>
         </a>
       </div>
@@ -394,39 +358,70 @@
 
   </div>
 
-  <!-- Right column: preview + meta -->
-  <div class="preview-panel">
+  <!-- ── Right column ── -->
+  <div class="right-col">
 
-    <!-- Preview toggle tabs -->
-    <div id="previewTabs" style="display:none; gap:8px; margin-bottom:-4px;">
-      <button onclick="switchPreview('display')" id="tabDisplay"
-        style="padding:6px 14px;border-radius:6px 6px 0 0;border:1px solid #2d3748;border-bottom:none;
-               background:#1a1f2e;color:#4facfe;font-size:12px;font-weight:600;cursor:pointer;">
-        Display
-      </button>
-      <button onclick="switchPreview('opt')" id="tabOpt"
-        style="padding:6px 14px;border-radius:6px 6px 0 0;border:1px solid #2d3748;border-bottom:none;
-               background:#0f1117;color:#718096;font-size:12px;font-weight:600;cursor:pointer;">
-        Optimization (4×↓)
-      </button>
-    </div>
-
-    <div class="preview-wrap" id="previewWrap">
-      <div class="placeholder" id="previewPlaceholder">
-        <div class="big-icon">🏠</div>
-        <p>Run the pipeline to see the wall grid preview</p>
+    <!-- Main panel tabs -->
+    <div>
+      <div class="panel-tabs" id="panelTabs">
+        <button class="panel-tab active" onclick="switchPanel('grid')">Wall Grid</button>
+        <button class="panel-tab hidden" id="tabResult" onclick="switchPanel('result')">Optimization Result</button>
       </div>
-      <img id="previewImg" alt="Grid preview" style="display:none;" />
-      <span class="preview-label" id="previewLabel" style="display:none;">Display Grid</span>
+
+      <!-- Grid preview panel -->
+      <div id="panelGrid">
+        <div class="preview-wrap" id="previewWrap">
+          <div class="placeholder" id="previewPlaceholder">
+            <div class="big-icon">🏠</div>
+            <p>Run the pipeline to see the wall grid preview</p>
+          </div>
+          <div class="sub-tabs hidden" id="subTabs">
+            <button class="sub-tab active" onclick="switchPreview('display')">Display Grid</button>
+            <button class="sub-tab" onclick="switchPreview('opt')">Optimization Grid (4×↓)</button>
+          </div>
+          <img id="previewImg" alt="Grid preview" style="display:none;" />
+          <span class="preview-label hidden" id="previewLabel">Display Grid</span>
+        </div>
+        <div class="legend hidden" id="legendRow">
+          <div class="legend-item"><div class="legend-dot" style="background:#4facfe;"></div> Wall / Obstacle</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#0a0d14; border:1px solid #2d3748;"></div> Free Space</div>
+        </div>
+      </div>
+
+      <!-- Optimization result panel -->
+      <div id="panelResult" style="display:none;">
+
+        <!-- Metrics -->
+        <div class="metrics-row hidden" id="metricsRow">
+          <div class="metric-card">
+            <div class="m-label">Coverage</div>
+            <div class="m-value green" id="mCoverage">–</div>
+          </div>
+          <div class="metric-card">
+            <div class="m-label">Avg Signal</div>
+            <div class="m-value blue" id="mSignal">–</div>
+          </div>
+        </div>
+
+        <div class="preview-wrap" id="resultWrap" style="margin-top:12px;">
+          <div class="placeholder" id="resultPlaceholder">
+            <div class="big-icon">⚡</div>
+            <p>Run optimization to see router placement</p>
+          </div>
+          <img id="resultImg" alt="Optimization result" style="display:none;" />
+          <span class="preview-label hidden" id="resultLabel">Result</span>
+        </div>
+
+        <div class="legend" style="color:#718096;font-size:12px;padding:10px 14px;">
+          <div class="legend-item"><div class="legend-dot" style="background:#e53e3e;"></div> Router</div>
+          <div class="legend-item" style="width:40px;height:10px;background:linear-gradient(to right,#440154,#31688e,#35b779,#fde725);border-radius:2px;"></div>
+          <span>Signal strength (low → high)</span>
+        </div>
+      </div>
     </div>
 
-    <div class="legend" id="legendRow" style="display:none;">
-      <div class="legend-item"><div class="legend-dot" style="background:#4facfe;"></div> Wall / Obstacle</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#0a0d14; border:1px solid #2d3748;"></div> Free Space</div>
-    </div>
-
-    <!-- Meta stats -->
-    <div class="card" id="metaCard" style="display:none;">
+    <!-- Grid Metadata -->
+    <div class="card hidden" id="metaCard">
       <h2>Grid Metadata</h2>
       <div class="meta-grid" id="metaGrid"></div>
     </div>
@@ -436,18 +431,54 @@
 
 <script>
   let polling = null;
+  let optimPolling = null;
+  let activePanel = 'grid';
+  let activePreview = 'display';
+  let currentStrategy = 'ga';
 
-  // ----- File upload -----
+  // ── Strategy selector ──
+  function selectStrategy(s, el) {
+    currentStrategy = s;
+    document.querySelectorAll('.strategy-option').forEach(o => o.classList.remove('selected'));
+    el.classList.add('selected');
+  }
+
+  // ── Panel switcher ──
+  function switchPanel(panel) {
+    activePanel = panel;
+    document.getElementById('panelGrid').style.display = panel === 'grid' ? 'block' : 'none';
+    document.getElementById('panelResult').style.display = panel === 'result' ? 'block' : 'none';
+    document.querySelectorAll('.panel-tab').forEach(t => t.classList.remove('active'));
+    const idx = panel === 'grid' ? 0 : 1;
+    document.querySelectorAll('.panel-tab')[idx].classList.add('active');
+  }
+
+  // ── Grid sub-tabs ──
+  function switchPreview(type) {
+    activePreview = type;
+    const img = document.getElementById('previewImg');
+    const label = document.getElementById('previewLabel');
+    if (type === 'display') {
+      img.src = '/api/preview?ts=' + Date.now();
+      label.textContent = 'Display Grid';
+    } else {
+      img.src = '/api/preview/opt?ts=' + Date.now();
+      label.textContent = 'Optimization Grid (4× downsampled)';
+    }
+    document.querySelectorAll('.sub-tab').forEach((t, i) => {
+      t.classList.toggle('active', (i === 0 && type === 'display') || (i === 1 && type === 'opt'));
+    });
+  }
+
+  // ── File upload ──
   const dropzone = document.getElementById('dropzone');
   const fileInput = document.getElementById('fileInput');
 
   dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('drag-over'); });
   dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag-over'));
   dropzone.addEventListener('drop', e => {
-    e.preventDefault();
-    dropzone.classList.remove('drag-over');
-    const files = e.dataTransfer.files;
-    if (files.length) uploadFile(files[0]);
+    e.preventDefault(); dropzone.classList.remove('drag-over');
+    if (e.dataTransfer.files.length) uploadFile(e.dataTransfer.files[0]);
   });
   fileInput.addEventListener('change', () => {
     if (fileInput.files.length) uploadFile(fileInput.files[0]);
@@ -469,12 +500,12 @@
       .catch(() => showStatus('error', 'Upload failed.'));
   }
 
-  // ----- Pipeline -----
+  // ── Grid pipeline ──
   function runPipeline() {
     document.getElementById('runBtn').disabled = true;
     showStatus('info', '<span class="spinner"></span> Starting pipeline…');
     document.getElementById('progressWrap').style.display = 'block';
-    setProgress(5);
+    setProgress('progressBar', 5);
 
     fetch('/api/run', { method: 'POST' })
       .then(r => r.json())
@@ -510,77 +541,157 @@
         }
         if (p.running) {
           showStatus('info', `<span class="spinner"></span> ${p.stage}: ${p.message}`);
-          setProgress(p.progress || 40);
+          setProgress('progressBar', p.progress || 40);
         }
         if (p.done) {
           clearInterval(polling);
-          setProgress(100);
-          showStatus('success', '✅ Pipeline complete!');
+          setProgress('progressBar', 100);
+          showStatus('success', '✅ Pipeline complete! You can now run optimization.');
           document.getElementById('runBtn').disabled = false;
-          loadResults(data);
+          loadGridResults(data);
         }
-        // If not started yet and results already exist from a previous run
         if (!p.running && !p.done && !p.error && data.results_ready) {
           clearInterval(polling);
-          loadResults(data);
+          loadGridResults(data);
         }
       })
       .catch(() => {});
   }
 
-  let activePreview = 'display';
-
-  function switchPreview(type) {
-    activePreview = type;
-    const img = document.getElementById('previewImg');
-    const label = document.getElementById('previewLabel');
-    if (type === 'display') {
-      img.src = '/api/preview?ts=' + Date.now();
-      label.textContent = 'Display Grid';
-      document.getElementById('tabDisplay').style.background = '#1a1f2e';
-      document.getElementById('tabDisplay').style.color = '#4facfe';
-      document.getElementById('tabOpt').style.background = '#0f1117';
-      document.getElementById('tabOpt').style.color = '#718096';
-    } else {
-      img.src = '/api/preview/opt?ts=' + Date.now();
-      label.textContent = 'Optimization Grid (4× downsampled)';
-      document.getElementById('tabOpt').style.background = '#1a1f2e';
-      document.getElementById('tabOpt').style.color = '#4facfe';
-      document.getElementById('tabDisplay').style.background = '#0f1117';
-      document.getElementById('tabDisplay').style.color = '#718096';
-    }
-  }
-
-  function loadResults(data) {
-    // Show preview tabs and default to display preview
-    const tabs = document.getElementById('previewTabs');
-    tabs.style.display = 'flex';
+  function loadGridResults(data) {
+    document.getElementById('subTabs').classList.remove('hidden');
     const img = document.getElementById('previewImg');
     img.src = '/api/preview?ts=' + Date.now();
     img.style.display = 'block';
     document.getElementById('previewPlaceholder').style.display = 'none';
-    document.getElementById('previewLabel').style.display = 'block';
-    document.getElementById('legendRow').style.display = 'flex';
-
-    // Downloads
-    document.getElementById('downloadCard').style.display = 'block';
-
-    // Metadata
+    document.getElementById('previewLabel').classList.remove('hidden');
+    document.getElementById('legendRow').classList.remove('hidden');
+    document.getElementById('downloadCard').classList.remove('hidden');
+    document.getElementById('optimCard').classList.remove('hidden');
     if (data.meta && Object.keys(data.meta).length) {
       renderMeta(data.meta);
-      document.getElementById('metaCard').style.display = 'block';
+      document.getElementById('metaCard').classList.remove('hidden');
     }
+  }
+
+  // ── Optimization ──
+  function runOptimization() {
+    const strategy = currentStrategy;
+    const numRouters = parseInt(document.getElementById('numRouters').value) || 2;
+
+    document.getElementById('optimBtn').disabled = true;
+    showOptimStatus('info', '<span class="spinner"></span> Starting optimization…');
+    document.getElementById('optimProgressWrap').style.display = 'block';
+    setProgress('optimProgressBar', 5);
+
+    fetch('/api/optimize', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ strategy, num_routers: numRouters }),
+    })
+      .then(r => r.json())
+      .then(d => {
+        if (d.error) {
+          showOptimStatus('error', d.error);
+          document.getElementById('optimBtn').disabled = false;
+          return;
+        }
+        startOptimPolling(strategy);
+      })
+      .catch(() => {
+        showOptimStatus('error', 'Failed to start optimization.');
+        document.getElementById('optimBtn').disabled = false;
+      });
+  }
+
+  function startOptimPolling(strategy) {
+    if (optimPolling) clearInterval(optimPolling);
+    optimPolling = setInterval(() => pollOptimStatus(strategy), 1500);
+  }
+
+  function pollOptimStatus(strategy) {
+    fetch('/api/optimize/status')
+      .then(r => r.json())
+      .then(data => {
+        if (data.error) {
+          clearInterval(optimPolling);
+          showOptimStatus('error', '❌ ' + data.error);
+          document.getElementById('optimBtn').disabled = false;
+          return;
+        }
+        if (data.running) {
+          showOptimStatus('info', `<span class="spinner"></span> ${data.stage}: ${data.message}`);
+          setProgress('optimProgressBar', data.progress || 50);
+        }
+        if (data.done && data.result) {
+          clearInterval(optimPolling);
+          setProgress('optimProgressBar', 100);
+          const strat = data.result.strategy;
+          const cov = data.result.coverage_percent.toFixed(1);
+          const sig = data.result.average_signal_dBm.toFixed(1);
+          showOptimStatus('success', `✅ Done · Coverage: ${cov}% · Avg signal: ${sig} dBm`);
+          document.getElementById('optimBtn').disabled = false;
+          loadOptimResult(data.result);
+        }
+      })
+      .catch(() => {});
+  }
+
+  const STRATEGY_NAMES = { ga: 'Genetic Algorithm', random: 'Random', uniform: 'Uniform Grid' };
+
+  function loadOptimResult(result) {
+    const strategy = result.strategy;
+
+    document.getElementById('mCoverage').textContent = result.coverage_percent.toFixed(1) + '%';
+    document.getElementById('mSignal').textContent = result.average_signal_dBm.toFixed(1) + ' dBm';
+    document.getElementById('metricsRow').classList.remove('hidden');
+
+    const img = document.getElementById('resultImg');
+    img.src = `/api/optimize/image/${strategy}?ts=` + Date.now();
+    img.style.display = 'block';
+    document.getElementById('resultPlaceholder').style.display = 'none';
+    const lbl = document.getElementById('resultLabel');
+    lbl.textContent = STRATEGY_NAMES[strategy] || strategy;
+    lbl.classList.remove('hidden');
+
+    document.getElementById('tabResult').classList.remove('hidden');
+    switchPanel('result');
+  }
+
+  // ── Helpers ──
+  function setProgress(id, pct) {
+    document.getElementById(id).style.width = pct + '%';
+  }
+
+  function showStatus(type, msg) {
+    const box = document.getElementById('statusBox');
+    box.className = 'status-box ' + type;
+    box.innerHTML = msg;
+    box.style.display = 'block';
+  }
+
+  function showOptimStatus(type, msg) {
+    const box = document.getElementById('optimStatusBox');
+    box.className = 'status-box ' + type;
+    box.innerHTML = msg;
+    box.style.display = 'block';
   }
 
   function renderMeta(meta) {
     const grid = document.getElementById('metaGrid');
     const cs = meta.cell_size ? meta.cell_size + ' units' : '–';
-    const shape = meta.crop && meta.crop.cropped_shape ? meta.crop.cropped_shape.join(' × ') : (meta.grid_shape ? meta.grid_shape.join(' × ') : '–');
+    const shape = meta.crop && meta.crop.cropped_shape
+      ? meta.crop.cropped_shape.join(' × ')
+      : (meta.grid_shape ? meta.grid_shape.join(' × ') : '–');
     const bounds = meta.bounds;
     let width = '–', height = '–';
     if (bounds) {
-      width = Math.round(bounds.maxx - bounds.minx);
-      height = Math.round(bounds.maxy - bounds.miny);
+      const bmaxx = bounds.maxx !== undefined ? bounds.maxx : bounds.max_x;
+      const bminx = bounds.minx !== undefined ? bounds.minx : bounds.min_x;
+      const bmaxy = bounds.maxy !== undefined ? bounds.maxy : bounds.max_y;
+      const bminy = bounds.miny !== undefined ? bounds.miny : bounds.min_y;
+      width = Math.round(bmaxx - bminx);
+      height = Math.round(bmaxy - bminy);
     }
     const items = [
       { label: 'Grid Size', value: shape, unit: 'cells' },
@@ -592,22 +703,10 @@
       <div class="meta-item">
         <div class="label">${i.label}</div>
         <div class="value">${i.value} <span class="unit">${i.unit}</span></div>
-      </div>
-    `).join('');
+      </div>`).join('');
   }
 
-  function setProgress(pct) {
-    document.getElementById('progressBar').style.width = pct + '%';
-  }
-
-  function showStatus(type, msg) {
-    const box = document.getElementById('statusBox');
-    box.className = 'status-box ' + type;
-    box.innerHTML = msg;
-    box.style.display = 'block';
-  }
-
-  // ----- Init -----
+  // ── Init ──
   fetch('/api/status')
     .then(r => r.json())
     .then(data => {
@@ -615,11 +714,9 @@
         document.getElementById('fileLabel').textContent = data.dxf_filename;
         document.getElementById('fileBadge').style.display = 'flex';
         document.getElementById('runBtn').disabled = false;
-      } else {
-        document.getElementById('runBtn').disabled = true;
       }
       if (data.results_ready) {
-        loadResults(data);
+        loadGridResults(data);
         document.getElementById('progressWrap').style.display = 'none';
       }
     });

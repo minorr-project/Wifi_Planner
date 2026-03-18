@@ -5,3 +5,11 @@ scikit-learn
 scipy
 pillow
 flask
+ezdxf
+flask
+matplotlib
+numpy
+pillow
+scikit-learn
+scipy
+werkzeug

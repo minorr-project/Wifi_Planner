@@ -7,11 +7,11 @@ from flask import Flask, render_template, request, jsonify, send_file
 from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
-app.config['MAX_CONTENT_LENGTH'] = 200 * 1024 * 1024  # 200 MB max upload
+app.config['MAX_CONTENT_LENGTH'] = 200 * 1024 * 1024
 
 ALLOWED_EXTENSIONS = {"dxf"}
 
-current_dxf = None  # tracks the currently loaded DXF filename
+current_dxf = None
 
 pipeline_status = {
     "running": False,
@@ -22,6 +22,17 @@ pipeline_status = {
     "progress": 0,
 }
 
+optimization_status = {
+    "running": False,
+    "stage": None,
+    "message": "",
+    "done": False,
+    "error": None,
+    "progress": 0,
+    "strategy": None,
+    "result": None,
+}
+
 
 def allowed_file(filename):
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -30,7 +41,6 @@ def allowed_file(filename):
 def run_pipeline(dxf_path):
     global pipeline_status
     pipeline_status.update({"running": True, "done": False, "error": None, "progress": 10})
-
     try:
         pipeline_status.update({
             "stage": "Processing DXF",
@@ -51,9 +61,41 @@ def run_pipeline(dxf_path):
             "message": "Pipeline finished successfully.",
             "progress": 100,
         })
-
     except Exception as e:
         pipeline_status.update({
+            "running": False,
+            "done": False,
+            "error": str(e),
+            "stage": "Error",
+            "message": str(e),
+            "progress": 0,
+        })
+
+
+def run_optimization_thread(strategy, num_routers):
+    global optimization_status
+    optimization_status.update({
+        "running": True, "done": False, "error": None,
+        "progress": 10, "strategy": strategy, "result": None,
+    })
+    try:
+        optimization_status.update({
+            "stage": "Optimizing",
+            "message": f"Running {strategy} placement for {num_routers} router(s)…",
+            "progress": 30,
+        })
+        from optimization import run_optimization
+        result = run_optimization(strategy, num_routers)
+        optimization_status.update({
+            "running": False,
+            "done": True,
+            "stage": "Complete",
+            "message": "Optimization finished.",
+            "progress": 100,
+            "result": result,
+        })
+    except Exception as e:
+        optimization_status.update({
             "running": False,
             "done": False,
             "error": str(e),
@@ -76,7 +118,6 @@ def api_status():
         and os.path.exists("grid_preview.png")
     )
     dxf_exists = current_dxf is not None and os.path.exists(current_dxf)
-
     meta = {}
     if os.path.exists("grid_meta.json"):
         try:
@@ -104,7 +145,6 @@ def api_upload():
         return jsonify({"error": "No selected file"}), 400
     if not allowed_file(f.filename):
         return jsonify({"error": "Only .dxf files are allowed"}), 400
-
     filename = secure_filename(f.filename)
     f.save(filename)
     current_dxf = filename
@@ -118,15 +158,59 @@ def api_run():
         return jsonify({"error": "Pipeline already running"}), 409
     if not current_dxf or not os.path.exists(current_dxf):
         return jsonify({"error": "No DXF file loaded. Please upload one first."}), 400
-
     thread = threading.Thread(target=run_pipeline, args=(current_dxf,), daemon=True)
     thread.start()
     return jsonify({"started": True})
 
 
+@app.route("/api/optimize", methods=["POST"])
+def api_optimize():
+    global optimization_status
+    if optimization_status["running"]:
+        return jsonify({"error": "Optimization already running"}), 409
+    if not os.path.exists("grid.npy"):
+        return jsonify({"error": "Grid not ready. Run the pipeline first."}), 400
+
+    data = request.get_json(silent=True) or {}
+    strategy = data.get("strategy", "ga")
+    if strategy not in ("ga", "random", "uniform"):
+        return jsonify({"error": "Invalid strategy. Choose ga, random, or uniform."}), 400
+    try:
+        num_routers = int(data.get("num_routers", 2))
+        if num_routers < 1 or num_routers > 20:
+            raise ValueError
+    except (ValueError, TypeError):
+        return jsonify({"error": "num_routers must be an integer between 1 and 20."}), 400
+
+    optimization_status = {
+        "running": False, "stage": None, "message": "",
+        "done": False, "error": None, "progress": 0,
+        "strategy": strategy, "result": None,
+    }
+    thread = threading.Thread(
+        target=run_optimization_thread, args=(strategy, num_routers), daemon=True
+    )
+    thread.start()
+    return jsonify({"started": True})
+
+
+@app.route("/api/optimize/status")
+def api_optimize_status():
+    return jsonify(optimization_status)
+
+
+@app.route("/api/optimize/image/<strategy>")
+def api_optimize_image(strategy):
+    if strategy not in ("ga", "random", "uniform"):
+        return jsonify({"error": "Invalid strategy"}), 400
+    path = os.path.join("outputs", "images", f"{strategy}_placement.png")
+    if not os.path.exists(path):
+        return jsonify({"error": "Image not available"}), 404
+    return send_file(path, mimetype="image/png")
+
+
 @app.route("/api/preview")
 def api_preview():
-    # Serve display-quality preview by default; fall back to optimization preview
     path = "grid_display_preview.png" if os.path.exists("grid_display_preview.png") else "grid_preview.png"
     if not os.path.exists(path):
         return jsonify({"error": "No preview available"}), 404
