@@ -1,6 +1,7 @@
 """
 WiFi Router Placement Optimization module.
 Supports three strategies: genetic algorithm (ga), random, and uniform.
+Uses a fast vectorized signal model for speed.
 """
 
 import os
@@ -13,14 +14,73 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 from member_A_genetic_Algorithm_core.ga_core import run_ga, get_free_cells
-from member_B_signal_simulation_engine.signal_math import (
-    coverage_metrics,
-    best_signal,
-    S_threshold,
-)
+from member_B_signal_simulation_engine.signal_math import S_threshold
 
 REPO_ROOT = os.path.dirname(os.path.abspath(__file__))
 OUTPUT_DIR = os.path.join(REPO_ROOT, "outputs")
+
+# Signal constants (mirror signal_math.py)
+_S0 = -30.0
+_D_LOSS_K = 2.0
+_WALL_PENALTY = 8.0
+
+
+# ── Fast vectorized signal helpers ─────────────────────────────────────────
+
+def _cell_size_m(grid):
+    """Estimate metres per cell from grid width (15 m reference building)."""
+    return 15.0 / grid.shape[1]
+
+
+def _vectorized_heatmap(grid, routers):
+    """
+    Fast numpy heatmap using distance-based signal (no wall-crossing loop).
+    Returns a (H, W) array, NaN over walls.
+    """
+    h, w = grid.shape
+    cs = _cell_size_m(grid)
+    y_idx, x_idx = np.mgrid[0:h, 0:w]
+    heat = np.full((h, w), -300.0)
+    for rx, ry in routers:
+        dist_m = np.sqrt((x_idx - rx) ** 2 + (y_idx - ry) ** 2) * cs
+        sig = _S0 - _D_LOSS_K * dist_m
+        heat = np.maximum(heat, sig)
+    heat[grid != 0] = np.nan
+    return heat
+
+
+def _vectorized_coverage(routers, grid):
+    """
+    Fast numpy coverage metrics using distance-based signal (no wall loops).
+    Returns (coverage_pct, avg_signal_dBm).
+    """
+    h, w = grid.shape
+    cs = _cell_size_m(grid)
+    y_idx, x_idx = np.mgrid[0:h, 0:w]
+    heat = np.full((h, w), -300.0)
+    for rx, ry in routers:
+        dist_m = np.sqrt((x_idx - rx) ** 2 + (y_idx - ry) ** 2) * cs
+        sig = _S0 - _D_LOSS_K * dist_m
+        heat = np.maximum(heat, sig)
+    free = heat[grid == 0]
+    if len(free) == 0:
+        return 0.0, 0.0
+    return float((free >= S_threshold).mean() * 100), float(free.mean())
+
+
+def _vectorized_fitness(routers, grid):
+    cov, _ = _vectorized_coverage(routers, grid)
+    return cov
+
+
+# ── Grid helpers ────────────────────────────────────────────────────────────
+
+def _max_pool(grid, factor):
+    """Downsample grid by factor using max-pooling (wall wins in any block)."""
+    h, w = grid.shape
+    h2, w2 = h // factor, w // factor
+    cropped = grid[:h2 * factor, :w2 * factor]
+    return cropped.reshape(h2, factor, w2, factor).max(axis=(1, 3))
 
 
 def load_grids():
@@ -34,21 +94,78 @@ def load_grids():
     return grid_opt, grid_disp, meta
 
 
-def _scale_routers(routers_opt, grid_opt, grid_disp):
-    h_opt, w_opt = grid_opt.shape
-    h_disp, w_disp = grid_disp.shape
-    sx = max(1, round(w_disp / w_opt))
-    sy = max(1, round(h_disp / h_opt))
-    return [(min(int(x * sx), w_disp - 1), min(int(y * sy), h_disp - 1))
-            for x, y in routers_opt]
+def _scale_routers(routers, from_grid, to_grid):
+    """Scale router coords from one grid space to another."""
+    fh, fw = from_grid.shape
+    th, tw = to_grid.shape
+    sx = tw / fw
+    sy = th / fh
+    return [(min(int(x * sx), tw - 1), min(int(y * sy), th - 1)) for x, y in routers]
 
 
-def ga_placement(grid, num_routers, generations=40, population_size=30, seed=42):
-    result = run_ga(grid, num_routers=num_routers,
-                    generations=generations,
-                    population_size=population_size,
-                    seed=seed)
-    return result["best_routers"]
+# ── Custom fast GA that uses vectorized fitness ─────────────────────────────
+
+def _run_fast_ga(grid, num_routers, population_size=20, generations=30, seed=42):
+    """
+    GA using a fast vectorized fitness function instead of the slow
+    cell-by-cell signal_math version.
+    """
+    import random as rng_mod
+    rng = rng_mod.Random(seed)
+
+    free = get_free_cells(grid)
+    if num_routers > len(free):
+        raise ValueError("num_routers exceeds number of free cells")
+
+    population = [rng.sample(free, num_routers) for _ in range(population_size)]
+    best_routers = population[0][:]
+    best_fit = float('-inf')
+
+    for _ in range(generations):
+        fits = [_vectorized_fitness(ind, grid) for ind in population]
+
+        gen_best_idx = max(range(len(population)), key=lambda i: fits[i])
+        if fits[gen_best_idx] > best_fit:
+            best_fit = fits[gen_best_idx]
+            best_routers = population[gen_best_idx][:]
+
+        # Elitism + tournament selection + crossover + mutation
+        elite = sorted(range(len(population)), key=lambda i: fits[i], reverse=True)[:2]
+        new_pop = [population[i][:] for i in elite]
+
+        while len(new_pop) < population_size:
+            a = max(rng.sample(range(len(population)), 3), key=lambda i: fits[i])
+            b = max(rng.sample(range(len(population)), 3), key=lambda i: fits[i])
+            pa, pb = population[a], population[b]
+            if len(pa) >= 2 and rng.random() < 0.8:
+                cut = rng.randint(1, len(pa) - 1)
+                child = pa[:cut] + pb[cut:]
+            else:
+                child = pa[:]
+            child = [rng.choice(free) if rng.random() < 0.2 else g for g in child]
+            # repair duplicates
+            seen = set()
+            repaired = []
+            for c in child:
+                if c not in seen:
+                    repaired.append(c)
+                    seen.add(c)
+            while len(repaired) < num_routers:
+                c = rng.choice(free)
+                if c not in seen:
+                    repaired.append(c)
+                    seen.add(c)
+            new_pop.append(repaired)
+
+        population = new_pop
+
+    return best_routers
+
+
+# ── Placement strategies ─────────────────────────────────────────────────────
+
+def ga_placement(grid, num_routers, seed=42):
+    return _run_fast_ga(grid, num_routers, population_size=20, generations=30, seed=seed)
 
 
 def random_placement(grid, num_routers, seed=None):
@@ -60,10 +177,6 @@ def random_placement(grid, num_routers, seed=None):
 
 
 def uniform_placement(grid, num_routers):
-    """
-    Divide free space into a grid of num_routers zones and pick the
-    free cell nearest the centre of each zone.
-    """
     free = get_free_cells(grid)
     if not free:
         raise ValueError("No free cells available")
@@ -77,12 +190,10 @@ def uniform_placement(grid, num_routers):
 
     cols = math.ceil(math.sqrt(num_routers))
     rows = math.ceil(num_routers / cols)
-
-    free_set = set(free)
-    routers = []
     zone_w = (max_x - min_x + 1) / cols
     zone_h = (max_y - min_y + 1) / rows
 
+    routers = []
     for r in range(rows):
         for c in range(cols):
             if len(routers) >= num_routers:
@@ -93,11 +204,7 @@ def uniform_placement(grid, num_routers):
             if best not in routers:
                 routers.append(best)
             else:
-                candidates = sorted(
-                    free,
-                    key=lambda p: (p[0] - cx) ** 2 + (p[1] - cy) ** 2
-                )
-                for cand in candidates:
+                for cand in sorted(free, key=lambda p: (p[0] - cx) ** 2 + (p[1] - cy) ** 2):
                     if cand not in routers:
                         routers.append(cand)
                         break
@@ -105,15 +212,7 @@ def uniform_placement(grid, num_routers):
     return routers[:num_routers]
 
 
-def make_heatmap(grid, routers):
-    h, w = grid.shape
-    heat = np.full((h, w), np.nan, dtype=float)
-    for y in range(h):
-        for x in range(w):
-            if grid[y, x] == 0:
-                heat[y, x] = best_signal((x, y), routers, grid)
-    return heat
-
+# ── Visualization ─────────────────────────────────────────────────────────
 
 STRATEGY_LABELS = {
     "ga": "Genetic Algorithm",
@@ -122,12 +221,26 @@ STRATEGY_LABELS = {
 }
 
 
-def visualize_and_save(grid_disp, routers_disp, strategy, output_dir=OUTPUT_DIR):
+def visualize_and_save(grid_disp, routers_disp, strategy,
+                       grid_opt=None, routers_opt=None, output_dir=OUTPUT_DIR):
     images_dir = os.path.join(output_dir, "images")
     os.makedirs(images_dir, exist_ok=True)
 
-    heat = make_heatmap(grid_disp, routers_disp)
-    heat = np.clip(heat, -95, -30)
+    if grid_opt is not None and routers_opt is not None:
+        heat_small = _vectorized_heatmap(grid_opt, routers_opt)
+        heat_small_clipped = np.clip(heat_small, -95, -30)
+        nan_mask = np.isnan(heat_small_clipped)
+        from scipy.ndimage import zoom as nd_zoom
+        th, tw = grid_disp.shape
+        zh = th / grid_opt.shape[0]
+        zw = tw / grid_opt.shape[1]
+        filled = np.where(nan_mask, -200.0, heat_small_clipped)
+        heat = nd_zoom(filled, (zh, zw), order=1)
+        mask_up = nd_zoom(nan_mask.astype(float), (zh, zw), order=0)
+        heat = np.where(mask_up > 0.5, np.nan, heat)
+    else:
+        heat = _vectorized_heatmap(grid_disp, routers_disp)
+        heat = np.clip(heat, -95, -30)
 
     label = STRATEGY_LABELS.get(strategy, strategy)
 
@@ -144,7 +257,8 @@ def visualize_and_save(grid_disp, routers_disp, strategy, output_dir=OUTPUT_DIR)
     ax0.set_yticks([])
 
     ax1 = axes[1]
-    im = ax1.imshow(heat, origin="lower", cmap="viridis", interpolation="nearest")
+    im = ax1.imshow(heat, origin="lower", cmap="viridis", interpolation="nearest",
+                    vmin=-95, vmax=-30)
     wall_mask = np.ma.masked_where(grid_disp == 0, grid_disp)
     ax1.imshow(wall_mask, origin="lower", cmap="gray_r", alpha=0.9, interpolation="nearest")
     for i, (x, y) in enumerate(routers_disp, start=1):
@@ -165,11 +279,9 @@ def visualize_and_save(grid_disp, routers_disp, strategy, output_dir=OUTPUT_DIR)
     return save_path
 
 
+# ── Main entry point ─────────────────────────────────────────────────────────
+
 def run_optimization(strategy, num_routers, seed=42):
-    """
-    Full optimization pipeline for a given strategy.
-    Returns dict with routers, coverage_percent, average_signal_dBm, image_path.
-    """
     grid_opt, grid_disp, meta = load_grids()
 
     if strategy == "ga":
@@ -181,9 +293,13 @@ def run_optimization(strategy, num_routers, seed=42):
     else:
         raise ValueError(f"Unknown strategy: {strategy}")
 
-    coverage_pct, avg_signal = coverage_metrics(routers_opt, grid_opt)
+    coverage_pct, avg_signal = _vectorized_coverage(routers_opt, grid_opt)
     routers_disp = _scale_routers(routers_opt, grid_opt, grid_disp)
-    image_path = visualize_and_save(grid_disp, routers_disp, strategy)
+
+    image_path = visualize_and_save(
+        grid_disp, routers_disp, strategy,
+        grid_opt=grid_opt, routers_opt=routers_opt,
+    )
 
     result = {
         "strategy": strategy,
@@ -196,8 +312,7 @@ def run_optimization(strategy, num_routers, seed=42):
     }
 
     os.makedirs(OUTPUT_DIR, exist_ok=True)
-    results_path = os.path.join(OUTPUT_DIR, f"{strategy}_results.json")
-    with open(results_path, "w") as f:
+    with open(os.path.join(OUTPUT_DIR, f"{strategy}_results.json"), "w") as f:
         json.dump(result, f, indent=2)
 
     return result

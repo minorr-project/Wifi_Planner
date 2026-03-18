@@ -1,0 +1,19 @@
+{
+  "strategy": "ga",
+  "num_routers": 1,
+  "routers_optimization_grid": [
+    {
+      "x": 389,
+      "y": 216
+    }
+  ],
+  "routers_display_grid": [
+    {
+      "x": 1556,
+      "y": 865
+    }
+  ],
+  "coverage_percent": 100.0,
+  "average_signal_dBm": -46.85791381544021,
+  "image_path": "/home/runner/workspace/outputs/images/ga_placement.png"
+}

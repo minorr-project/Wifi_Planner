@@ -686,8 +686,12 @@
     const bounds = meta.bounds;
     let width = '–', height = '–';
     if (bounds) {
-      width = Math.round(bounds.maxx - bounds.minx);
-      height = Math.round(bounds.maxy - bounds.miny);
+      const bmaxx = bounds.maxx !== undefined ? bounds.maxx : bounds.max_x;
+      const bminx = bounds.minx !== undefined ? bounds.minx : bounds.min_x;
+      const bmaxy = bounds.maxy !== undefined ? bounds.maxy : bounds.max_y;
+      const bminy = bounds.miny !== undefined ? bounds.miny : bounds.min_y;
+      width = Math.round(bmaxx - bminx);
+      height = Math.round(bmaxy - bminy);
     }
     const items = [
       { label: 'Grid Size', value: shape, unit: 'cells' },
