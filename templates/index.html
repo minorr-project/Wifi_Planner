@@ -344,7 +344,7 @@
     <!-- Run -->
     <div class="card">
       <h2>Pipeline</h2>
-      <p style="font-size:13px;color:#718096;line-height:1.6;">Extracts 3D wall faces from the DXF, flattens them to 2D, and rasterizes a binary wall grid.</p>
+      <p style="font-size:13px;color:#718096;line-height:1.6;">Auto-detects DXF entity types and chooses the best strategy (vector or render) to produce a binary wall grid.</p>
       <button class="btn btn-primary" id="runBtn" onclick="runPipeline()">▶ Run Pipeline</button>
 
       <div class="status-box" id="statusBox"></div>
@@ -357,19 +357,35 @@
     <div class="card" id="downloadCard" style="display:none;">
       <h2>Download Outputs</h2>
       <div class="download-list">
-        <a class="download-item" href="/api/download/grid" download>
+        <a class="download-item" href="/api/download/grid_display" download>
           <span class="icon">🔢</span>
           <div>
+            <div class="name">grid_display.npy</div>
+            <div class="desc">High-res display grid (NumPy array)</div>
+          </div>
+          <span class="arrow">↓</span>
+        </a>
+        <a class="download-item" href="/api/download/meta_display" download>
+          <span class="icon">📋</span>
+          <div>
+            <div class="name">grid_display_meta.json</div>
+            <div class="desc">Display grid scale &amp; bounds metadata</div>
+          </div>
+          <span class="arrow">↓</span>
+        </a>
+        <a class="download-item" href="/api/download/grid" download>
+          <span class="icon">🗜️</span>
+          <div>
             <div class="name">grid.npy</div>
-            <div class="desc">Binary wall grid (NumPy array)</div>
+            <div class="desc">Optimization grid (4× downsampled)</div>
           </div>
           <span class="arrow">↓</span>
         </a>
         <a class="download-item" href="/api/download/meta" download>
-          <span class="icon">📋</span>
+          <span class="icon">📄</span>
           <div>
             <div class="name">grid_meta.json</div>
-            <div class="desc">Scale, bounds &amp; crop metadata</div>
+            <div class="desc">Optimization grid metadata</div>
           </div>
           <span class="arrow">↓</span>
         </a>
@@ -381,13 +397,27 @@
   <!-- Right column: preview + meta -->
   <div class="preview-panel">
 
+    <!-- Preview toggle tabs -->
+    <div id="previewTabs" style="display:none; gap:8px; margin-bottom:-4px;">
+      <button onclick="switchPreview('display')" id="tabDisplay"
+        style="padding:6px 14px;border-radius:6px 6px 0 0;border:1px solid #2d3748;border-bottom:none;
+               background:#1a1f2e;color:#4facfe;font-size:12px;font-weight:600;cursor:pointer;">
+        Display
+      </button>
+      <button onclick="switchPreview('opt')" id="tabOpt"
+        style="padding:6px 14px;border-radius:6px 6px 0 0;border:1px solid #2d3748;border-bottom:none;
+               background:#0f1117;color:#718096;font-size:12px;font-weight:600;cursor:pointer;">
+        Optimization (4×↓)
+      </button>
+    </div>
+
     <div class="preview-wrap" id="previewWrap">
       <div class="placeholder" id="previewPlaceholder">
         <div class="big-icon">🏠</div>
         <p>Run the pipeline to see the wall grid preview</p>
       </div>
       <img id="previewImg" alt="Grid preview" style="display:none;" />
-      <span class="preview-label" id="previewLabel" style="display:none;">Grid Preview</span>
+      <span class="preview-label" id="previewLabel" style="display:none;">Display Grid</span>
     </div>
 
     <div class="legend" id="legendRow" style="display:none;">
@@ -498,8 +528,33 @@
       .catch(() => {});
   }
 
+  let activePreview = 'display';
+
+  function switchPreview(type) {
+    activePreview = type;
+    const img = document.getElementById('previewImg');
+    const label = document.getElementById('previewLabel');
+    if (type === 'display') {
+      img.src = '/api/preview?ts=' + Date.now();
+      label.textContent = 'Display Grid';
+      document.getElementById('tabDisplay').style.background = '#1a1f2e';
+      document.getElementById('tabDisplay').style.color = '#4facfe';
+      document.getElementById('tabOpt').style.background = '#0f1117';
+      document.getElementById('tabOpt').style.color = '#718096';
+    } else {
+      img.src = '/api/preview/opt?ts=' + Date.now();
+      label.textContent = 'Optimization Grid (4× downsampled)';
+      document.getElementById('tabOpt').style.background = '#1a1f2e';
+      document.getElementById('tabOpt').style.color = '#4facfe';
+      document.getElementById('tabDisplay').style.background = '#0f1117';
+      document.getElementById('tabDisplay').style.color = '#718096';
+    }
+  }
+
   function loadResults(data) {
-    // Show preview
+    // Show preview tabs and default to display preview
+    const tabs = document.getElementById('previewTabs');
+    tabs.style.display = 'flex';
     const img = document.getElementById('previewImg');
     img.src = '/api/preview?ts=' + Date.now();
     img.style.display = 'block';

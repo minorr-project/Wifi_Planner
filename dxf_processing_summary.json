@@ -1,19 +1,25 @@
 {
-  "input_dxf": "/Users/sitaram/Documents/GitHub/Wifi_Planner/house.dxf",
-  "strategy": "vector",
+  "input_dxf": "/Users/sitaram/Documents/GitHub/Wifi_Planner/floorplan.dxf",
+  "strategy": "render_fallback",
   "entity_counts": {
-    "LWPOLYLINE": 88,
-    "CIRCLE": 3,
-    "LINE": 2,
-    "TEXT": 12
+    "TEXT": 89,
+    "DIMENSION": 63,
+    "LWPOLYLINE": 124,
+    "LINE": 624,
+    "CIRCLE": 9,
+    "LEADER": 6,
+    "MTEXT": 9,
+    "HATCH": 13,
+    "INSERT": 10,
+    "ARC": 20
   },
   "display_grid_shape": [
-    1314,
-    1601
+    1244,
+    1310
   ],
   "optimization_grid_shape": [
-    328,
-    400
+    311,
+    327
   ],
   "output_dir": "/Users/sitaram/Documents/GitHub/Wifi_Planner"
 }
