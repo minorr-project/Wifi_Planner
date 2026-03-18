@@ -1,5 +1,5 @@
 {
-  "strategy": "ga",
+  "strategy": "random",
   "num_routers": 1,
   "routers_optimization_grid": [
     {
@@ -15,5 +15,5 @@
   ],
   "coverage_percent": 88.77957905584843,
   "average_signal_dBm": -57.412376403808594,
-  "image_path": "/home/runner/workspace/outputs/images/ga_placement.png"
+  "image_path": "/home/runner/workspace/outputs/images/random_placement.png"
 }
