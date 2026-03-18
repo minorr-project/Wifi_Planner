@@ -41,5 +41,5 @@
     "TEXT": 12
   },
   "strategy": "vector",
-  "input_dxf": "D:\\Wifi_Planner\\house.dxf"
+  "input_dxf": "/Users/sitaram/Documents/GitHub/Wifi_Planner/house.dxf"
 }

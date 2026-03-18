@@ -1,5 +1,5 @@
 {
-  "input_dxf": "D:\\Wifi_Planner\\house.dxf",
+  "input_dxf": "/Users/sitaram/Documents/GitHub/Wifi_Planner/house.dxf",
   "strategy": "vector",
   "entity_counts": {
     "LWPOLYLINE": 88,
@@ -15,5 +15,5 @@
     328,
     400
   ],
-  "output_dir": "D:\\Wifi_Planner"
+  "output_dir": "/Users/sitaram/Documents/GitHub/Wifi_Planner"
 }

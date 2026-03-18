@@ -6,12 +6,9 @@ import json
 import random
 import numpy as np
 
-from dxf_to_grid_render import dxf_to_grid_render, preview_grid
-
-
-# ---- Force GUI backend (optional but helps on Windows) ----
+# ---- Use non-interactive backend (works headless, saves files) ----
 import matplotlib
-matplotlib.use("TkAgg")
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 # ---- Ensure project root is importable ----
@@ -158,7 +155,7 @@ def visualize_all(grid, methods, out_path="outputs/images/compare.png"):
     plt.tight_layout()
     plt.savefig(out_path, dpi=200, bbox_inches="tight")
     print(f"\nSaved plot: {out_path}")
-    plt.show()
+    plt.close(fig)
 
 
 # =========================

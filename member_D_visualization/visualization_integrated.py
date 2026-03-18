@@ -2,7 +2,7 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 
-from signal_math import best_signal, S_threshold
+from member_B_signal_simulation_engine.signal_math import best_signal, S_threshold
 
 
 def make_dbm_heatmap(grid, routers):
@@ -62,6 +62,60 @@ def plot_solution(grid, routers, out_path=None):
     if out_path:
         plt.savefig(out_path, dpi=200, bbox_inches="tight")
         print("Saved:", out_path)
+    plt.close(fig)
+    return fig
 
-    plt.show()
+
+def visualize_all(grid, methods, out_path="outputs/images/compare.png"):
+    """
+    Compare multiple router placements side-by-side.
+    methods: dict of {name: [(x, y), ...]}
+    """
+    os.makedirs(os.path.dirname(out_path), exist_ok=True)
+
+    names = list(methods.keys())
+    n = len(names)
+
+    fig, axes = plt.subplots(2, n, figsize=(5 * n, 8))
+    if n == 1:
+        axes = np.array([[axes[0]], [axes[1]]])
+
+    last_im = None
+
+    for i, name in enumerate(names):
+        routers = methods[name]
+
+        # Top: floorplan + routers
+        ax_top = axes[0, i]
+        ax_top.imshow(grid, cmap="gray_r", origin="lower")
+        for j, (x, y) in enumerate(routers):
+            ax_top.plot(x, y, "ro", markersize=8, markeredgecolor="black")
+            ax_top.text(
+                x, y + 1, f"R{j+1}",
+                ha="center", va="bottom",
+                bbox=dict(boxstyle="round,pad=0.2", facecolor="white", alpha=0.8)
+            )
+        ax_top.set_title(f"{name} (Placement)")
+        ax_top.set_xticks([])
+        ax_top.set_yticks([])
+
+        # Bottom: signal heatmap (dBm)
+        ax_bot = axes[1, i]
+        heat = make_dbm_heatmap(grid, routers)
+        heat = np.clip(heat, -95, -30)
+        last_im = ax_bot.imshow(heat, origin="lower", cmap="viridis")
+        for (x, y) in routers:
+            ax_bot.plot(x, y, "ko", markersize=6, markeredgecolor="white")
+        ax_bot.set_title(f"{name} (Signal dBm)\nThreshold = {S_threshold} dBm")
+        ax_bot.set_xticks([])
+        ax_bot.set_yticks([])
+
+    if last_im is not None:
+        cbar = fig.colorbar(last_im, ax=axes.ravel().tolist(), fraction=0.025, pad=0.02)
+        cbar.set_label("Signal (dBm)")
+
+    plt.tight_layout()
+    plt.savefig(out_path, dpi=200, bbox_inches="tight")
+    print(f"Saved: {out_path}")
+    plt.close(fig)
     return fig
