@@ -357,7 +357,13 @@ def render_fallback_to_grid(dxf_path: str, out_width=1400, thresh=245):
 
     fig.canvas.draw()
     w, h = fig.canvas.get_width_height()
-    img = np.frombuffer(fig.canvas.tostring_rgb(), dtype=np.uint8).reshape(h, w, 3)
+    try:
+        img = np.frombuffer(fig.canvas.tostring_rgb(), dtype=np.uint8).reshape(h, w, 3)
+    except AttributeError:
+        buf = np.frombuffer(fig.canvas.buffer_rgba(), dtype=np.uint8)
+        n_pixels = buf.size // 4
+        scale = int(round((n_pixels / (h * w)) ** 0.5))
+        img = buf.reshape(h * scale, w * scale, 4)[:, :, :3]
     plt.close(fig)
 
     gray = img.mean(axis=2)
