@@ -3,25 +3,25 @@
   "num_routers": 2,
   "routers_optimization_grid": [
     {
-      "x": 100,
-      "y": 164
+      "x": 78,
+      "y": 168
     },
     {
-      "x": 300,
-      "y": 164
+      "x": 7,
+      "y": 72
     }
   ],
   "routers_display_grid": [
     {
-      "x": 400,
-      "y": 657
+      "x": 312,
+      "y": 673
     },
     {
-      "x": 1200,
-      "y": 657
+      "x": 28,
+      "y": 288
     }
   ],
-  "coverage_percent": 99.76931309207659,
-  "average_signal_dBm": -46.57630920410156,
+  "coverage_percent": 98.35506758095842,
+  "average_signal_dBm": -49.9854850769043,
   "image_path": "/home/runner/workspace/outputs/images/ga_placement.png"
 }

@@ -192,12 +192,9 @@ def _run_ga(grid, num_routers, population_size=15, generations=16, seed=42):
     if num_routers > len(free):
         raise ValueError("num_routers exceeds number of free cells")
 
-    # Seed pop[0] with the uniform placement so we always start from a
-    # known-good spatially-spread solution
-    uniform_seed = uniform_placement(grid, num_routers)
-    pop = [uniform_seed]
-
-    # Fill remaining population with spatially diverse individuals
+    # Initialize entirely from spatial sectors so the GA explores the full
+    # building independently of the uniform or random strategies
+    pop = []
     while len(pop) < population_size:
         pop.append(_diverse_individual(free, num_routers, rng))
 
@@ -361,7 +358,8 @@ def run_optimization(strategy, num_routers, seed=42):
     if strategy == "ga":
         routers_opt = ga_placement(grid_opt, num_routers, seed=seed)
     elif strategy == "random":
-        routers_opt = random_placement(grid_opt, num_routers, seed=seed)
+        # No fixed seed — each run gives a genuinely different random placement
+        routers_opt = random_placement(grid_opt, num_routers, seed=None)
     elif strategy == "uniform":
         routers_opt = uniform_placement(grid_opt, num_routers)
     else:
