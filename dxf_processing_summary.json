@@ -1,5 +1,5 @@
 {
-  "input_dxf": "/Users/sitaram/Documents/GitHub/Wifi_Planner/floorplan.dxf",
+  "input_dxf": "/home/runner/workspace/floorplan.dxf",
   "strategy": "render_fallback",
   "entity_counts": {
     "TEXT": 89,
@@ -14,12 +14,12 @@
     "ARC": 20
   },
   "display_grid_shape": [
-    1244,
-    1310
+    634,
+    667
   ],
   "optimization_grid_shape": [
-    311,
-    327
+    158,
+    166
   ],
-  "output_dir": "/Users/sitaram/Documents/GitHub/Wifi_Planner"
+  "output_dir": "/home/runner/workspace"
 }

@@ -1,8 +1,8 @@
 {
   "source": "RENDER_FALLBACK",
   "grid_shape": [
-    1244,
-    1310
+    634,
+    667
   ],
   "codes": {
     "FREE": 0,
@@ -11,18 +11,18 @@
   "crop": {
     "cropped": true,
     "crop_box": {
-      "y_min": 50,
-      "y_max": 1293,
-      "x_min": 53,
-      "x_max": 1362
+      "y_min": 19,
+      "y_max": 652,
+      "x_min": 21,
+      "x_max": 687
     },
     "original_shape": [
-      1344,
-      1416
+      672,
+      708
     ],
     "cropped_shape": [
-      1244,
-      1310
+      634,
+      667
     ]
   },
   "notes": "Rendered DXF fallback. Can capture annotations as walls.",
@@ -39,5 +39,5 @@
     "ARC": 20
   },
   "strategy": "render_fallback",
-  "input_dxf": "/Users/sitaram/Documents/GitHub/Wifi_Planner/floorplan.dxf"
+  "input_dxf": "/home/runner/workspace/floorplan.dxf"
 }
