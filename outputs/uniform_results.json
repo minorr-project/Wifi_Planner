@@ -1,27 +1,19 @@
 {
   "strategy": "uniform",
-  "num_routers": 2,
+  "num_routers": 1,
   "routers_optimization_grid": [
     {
-      "x": 100,
-      "y": 164
-    },
-    {
-      "x": 300,
+      "x": 200,
       "y": 164
     }
   ],
   "routers_display_grid": [
     {
-      "x": 400,
-      "y": 657
-    },
-    {
-      "x": 1200,
+      "x": 800,
       "y": 657
     }
   ],
-  "coverage_percent": 99.76931309207659,
-  "average_signal_dBm": -46.57630920410156,
+  "coverage_percent": 92.35324428237345,
+  "average_signal_dBm": -58.238494873046875,
   "image_path": "/home/runner/workspace/outputs/images/uniform_placement.png"
 }
