@@ -98,10 +98,11 @@ def _coverage_metrics(routers, grid, n_steps=50):
     return coverage, avg_sig
 
 
-def _fast_fitness(routers, grid):
+def _ga_fitness(routers, grid):
     """
-    Distance-only (no wall) fitness for use INSIDE the GA loop.
-    Fast but approximate — used to guide search, not for final metrics.
+    Wall-aware fitness for the GA using n_steps=6 ray sampling.
+    Fast enough for hundreds of evaluations while genuinely accounting
+    for walls — so the GA produces meaningfully better results than random.
     """
     h, w = grid.shape
     cs = _cell_size_m(grid)
@@ -109,7 +110,9 @@ def _fast_fitness(routers, grid):
     heat = np.full((h, w), -300.0, dtype=np.float32)
     for rx, ry in routers:
         dist_m = np.sqrt((x_idx - rx) ** 2 + (y_idx - ry) ** 2) * cs
-        heat = np.maximum(heat, _S0 - _D_LOSS_K * dist_m)
+        crossings = _wall_crossings_map(grid, rx, ry, n_steps=6)
+        sig = _S0 - _D_LOSS_K * dist_m - _WALL_PENALTY * crossings
+        heat = np.maximum(heat, sig)
     free = heat[grid == 0]
     if len(free) == 0:
         return 0.0
@@ -139,22 +142,70 @@ def _scale_routers(routers, from_grid, to_grid):
 
 # ── Placement strategies ──────────────────────────────────────────────────────
 
-def _run_ga(grid, num_routers, population_size=20, generations=30, seed=42):
+def _diverse_individual(free, num_routers, rng, n_sectors=None):
     """
-    Custom GA using the fast (distance-only) fitness for speed.
-    Final metrics are recomputed with the accurate wall model after the GA.
+    Create one individual by sampling from spatial sectors of the free space,
+    ensuring candidates spread across the entire building rather than
+    clustering in one corner.
+    """
+    if n_sectors is None:
+        n_sectors = max(num_routers * 4, 20)
+
+    # Partition sorted free cells into equal sectors
+    sorted_free = sorted(free)
+    chunk = max(1, len(sorted_free) // n_sectors)
+    sectors = [sorted_free[i * chunk:(i + 1) * chunk]
+               for i in range(n_sectors) if sorted_free[i * chunk:(i + 1) * chunk]]
+
+    chosen_sectors = rng.sample(sectors, min(num_routers, len(sectors)))
+    ind = []
+    seen = set()
+    for sector in chosen_sectors:
+        c = rng.choice(sector)
+        if c not in seen:
+            ind.append(c)
+            seen.add(c)
+    # Fill any remaining slots randomly
+    while len(ind) < num_routers:
+        c = rng.choice(free)
+        if c not in seen:
+            ind.append(c)
+            seen.add(c)
+    return ind
+
+
+def _run_ga(grid, num_routers, population_size=15, generations=16, seed=42):
+    """
+    Genetic Algorithm with wall-aware fitness and spatially diverse
+    population initialization.
+
+    Key improvements over purely random initialization:
+    - Pop[0] is the uniform-grid placement (a strong, well-spread seed).
+    - Remaining members are sampled from spatial sectors so every region
+      of the building is represented from generation 0.
+    - Mutation rate 0.3 (vs 0.2) encourages broader exploration.
+
+    15 pop × 16 gen = 240 evaluations × ~15 ms each ≈ 3.6 s total.
     """
     rng = _random.Random(seed)
     free = get_free_cells(grid)
     if num_routers > len(free):
         raise ValueError("num_routers exceeds number of free cells")
 
-    pop = [rng.sample(free, num_routers) for _ in range(population_size)]
+    # Seed pop[0] with the uniform placement so we always start from a
+    # known-good spatially-spread solution
+    uniform_seed = uniform_placement(grid, num_routers)
+    pop = [uniform_seed]
+
+    # Fill remaining population with spatially diverse individuals
+    while len(pop) < population_size:
+        pop.append(_diverse_individual(free, num_routers, rng))
+
     best_ind = pop[0][:]
     best_fit = float('-inf')
 
     for _ in range(generations):
-        fits = [_fast_fitness(ind, grid) for ind in pop]
+        fits = [_ga_fitness(ind, grid) for ind in pop]
 
         gi = max(range(len(pop)), key=lambda i: fits[i])
         if fits[gi] > best_fit:
@@ -173,15 +224,18 @@ def _run_ga(grid, num_routers, population_size=20, generations=30, seed=42):
                 child = pa[:cut] + pb[cut:]
             else:
                 child = pa[:]
-            child = [rng.choice(free) if rng.random() < 0.2 else g for g in child]
+            # Higher mutation rate (0.3) for broader exploration
+            child = [rng.choice(free) if rng.random() < 0.3 else g for g in child]
             seen, repaired = set(), []
             for c in child:
                 if c not in seen:
-                    repaired.append(c); seen.add(c)
+                    repaired.append(c)
+                    seen.add(c)
             while len(repaired) < num_routers:
                 c = rng.choice(free)
                 if c not in seen:
-                    repaired.append(c); seen.add(c)
+                    repaired.append(c)
+                    seen.add(c)
             new_pop.append(repaired)
 
         pop = new_pop

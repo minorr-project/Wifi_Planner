@@ -1,19 +1,27 @@
 {
   "strategy": "random",
-  "num_routers": 1,
+  "num_routers": 2,
   "routers_optimization_grid": [
     {
       "x": 389,
       "y": 216
+    },
+    {
+      "x": 86,
+      "y": 37
     }
   ],
   "routers_display_grid": [
     {
       "x": 1556,
       "y": 865
+    },
+    {
+      "x": 344,
+      "y": 148
     }
   ],
-  "coverage_percent": 88.77957905584843,
-  "average_signal_dBm": -57.412376403808594,
+  "coverage_percent": 99.7923025090174,
+  "average_signal_dBm": -45.35540771484375,
   "image_path": "/home/runner/workspace/outputs/images/random_placement.png"
 }
