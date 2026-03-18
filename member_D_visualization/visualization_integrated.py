@@ -45,7 +45,9 @@ def plot_solution(grid, routers, out_path=None):
     ax1.set_yticks([])
 
     # ---- RIGHT: signal heatmap (dBm) ----
-    im = ax2.imshow(display, origin="lower")
+    im = ax2.imshow(display, origin="lower", cmap="viridis")
+    wall_mask = np.ma.masked_where(grid == 0, grid)
+    ax2.imshow(wall_mask, origin="lower", cmap="gray_r", alpha=0.9)
     for (x, y) in routers:
         ax2.plot(x, y, "ko", markersize=6, markeredgecolor="white")
     ax2.set_title(f"Signal Heatmap (dBm)\nThreshold = {S_threshold} dBm")

@@ -6,6 +6,9 @@ import json
 import random
 import numpy as np
 
+from dxf_to_grid_render import dxf_to_grid_render, preview_grid
+
+
 # ---- Force GUI backend (optional but helps on Windows) ----
 import matplotlib
 matplotlib.use("TkAgg")

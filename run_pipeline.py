@@ -1,231 +1,274 @@
 #!/usr/bin/env python3
 """
 WiFi Router Placement Optimization - Full Pipeline Integration
-Integrates all team members' code:
-  - Person C: DXF → Grid (root scripts)
-  - Member A: Genetic Algorithm
-  - Member B: Signal Simulation
-  - Member D: Visualization
+
+Uses:
+- grid.npy           -> optimization grid (smaller)
+- grid_display.npy   -> display grid (higher resolution)
+
+Outputs:
+- outputs/optimization_results.json
+- outputs/images/optimized_placement.png
 """
 
 import os
-import sys
-import numpy as np
 import json
+import numpy as np
+import matplotlib.pyplot as plt
 
-# Ensure repo root is in path for imports
+from member_A_genetic_Algorithm_core.ga_core import run_ga
+from member_B_signal_simulation_engine.signal_math import (
+    coverage_metrics,
+    best_signal,
+    S_threshold,
+)
+
+
 REPO_ROOT = os.path.dirname(os.path.abspath(__file__))
-if REPO_ROOT not in sys.path:
-    sys.path.insert(0, REPO_ROOT)
 
-# ============================================================
-# STEP 1: Load the grid (produced by Person C's pipeline)
-# ============================================================
-def downsample_grid(grid, factor):
-    """Downsample grid by given factor using max pooling (preserves walls)."""
-    h, w = grid.shape
-    new_h, new_w = h // factor, w // factor
-    result = np.zeros((new_h, new_w), dtype=grid.dtype)
-    
-    for y in range(new_h):
-        for x in range(new_w):
-            block = grid[y*factor:(y+1)*factor, x*factor:(x+1)*factor]
-            result[y, x] = 1 if np.any(block == 1) else 0
-    
-    return result
 
-def load_grid(downsample_factor=1):
-    """Load grid.npy and optionally downsample for faster processing."""
+def load_grid():
+    """Load optimization grid and metadata."""
     grid_path = os.path.join(REPO_ROOT, "grid.npy")
     meta_path = os.path.join(REPO_ROOT, "grid_meta.json")
-    
+
     if not os.path.exists(grid_path):
         raise FileNotFoundError(
-            "grid.npy not found. Run the DXF pipeline first:\n"
-            "  python3 dxf_to_grid.py\n"
-            "  python3 rasterize_to_grid.py"
+            "grid.npy not found.\n"
+            "Run:\n"
+            "  python dxf_pipeline_general.py house.dxf ."
         )
-    
-    # Load binary grid (0=free, 1=wall)
-    grid_binary = np.load(grid_path)
-    
-    # Load metadata if available
+
+    grid = np.load(grid_path).astype(np.uint8)
+
     meta = {}
     if os.path.exists(meta_path):
-        with open(meta_path, "r") as f:
+        with open(meta_path, "r", encoding="utf-8") as f:
             meta = json.load(f)
-    
-    # Downsample if requested
-    if downsample_factor > 1:
-        grid_binary = downsample_grid(grid_binary, downsample_factor)
-        meta['downsample_factor'] = downsample_factor
-    
-    return grid_binary, meta
+
+    return grid, meta
 
 
-# ============================================================
-# STEP 2: Run Genetic Algorithm (Member A)
-# ============================================================
-def run_optimization(grid_str, num_routers=3, generations=50, population_size=30, seed=42):
-    """Run GA to find optimal router placement."""
-    from member_A_genetic_Algorithm_core.ga_core import run_ga
-    
-    print(f"\n Running Genetic Algorithm...")
-    print(f"   • Routers to place: {num_routers}")
-    print(f"   • Generations: {generations}")
-    print(f"   • Population size: {population_size}")
-    
-    result = run_ga(
-        grid_str,
+def load_display_grid():
+    """Load high-resolution display grid."""
+    grid_path = os.path.join(REPO_ROOT, "grid_display.npy")
+
+    if not os.path.exists(grid_path):
+        raise FileNotFoundError(
+            "grid_display.npy not found.\n"
+            "Run:\n"
+            "  python dxf_pipeline_general.py house.dxf ."
+        )
+
+    return np.load(grid_path).astype(np.uint8)
+
+
+def compute_scale_factor(grid_opt, grid_display):
+    """
+    Estimate integer scale factor between optimization grid and display grid.
+    """
+    h_opt, w_opt = grid_opt.shape
+    h_disp, w_disp = grid_display.shape
+
+    scale_x = max(1, round(w_disp / w_opt))
+    scale_y = max(1, round(h_disp / h_opt))
+
+    # use separate scales if slightly different
+    return scale_x, scale_y
+
+
+def scale_routers_to_display(routers_opt, grid_display, scale_x, scale_y):
+    """
+    Convert router coordinates from optimization grid to display grid.
+    Routers are stored as (x, y).
+    """
+    h_disp, w_disp = grid_display.shape
+    routers_disp = []
+
+    for x, y in routers_opt:
+        xd = min(int(x * scale_x), w_disp - 1)
+        yd = min(int(y * scale_y), h_disp - 1)
+        routers_disp.append((xd, yd))
+
+    return routers_disp
+
+
+def make_dbm_heatmap(grid, routers):
+    """
+    Compute signal heatmap in dBm for free cells.
+    Walls are left as NaN.
+    """
+    h, w = grid.shape
+    heat = np.full((h, w), np.nan, dtype=float)
+
+    for y in range(h):
+        for x in range(w):
+            if grid[y, x] == 1:
+                continue
+            heat[y, x] = best_signal((x, y), routers, grid)
+
+    return heat
+
+
+def visualize_results(grid_display, routers_display, output_dir="outputs"):
+    """
+    Save a clean placement + heatmap visualization.
+    """
+    images_dir = os.path.join(output_dir, "images")
+    os.makedirs(images_dir, exist_ok=True)
+
+    heat = make_dbm_heatmap(grid_display, routers_display)
+    heat = np.clip(heat, -95, -30)
+
+    fig, axes = plt.subplots(1, 2, figsize=(14, 7))
+
+    # Left: placement
+    ax0 = axes[0]
+    ax0.imshow(grid_display, cmap="gray_r", origin="lower", interpolation="nearest")
+    for i, (x, y) in enumerate(routers_display, start=1):
+        ax0.plot(x, y, "ro", markersize=8, markeredgecolor="black")
+        ax0.text(
+            x,
+            y + 3,
+            f"R{i}",
+            ha="center",
+            va="bottom",
+            bbox=dict(boxstyle="round,pad=0.2", facecolor="white", alpha=0.85),
+        )
+    ax0.set_title("Optimized Router Placement")
+    ax0.set_xticks([])
+    ax0.set_yticks([])
+
+    # Right: heatmap with wall overlay
+    ax1 = axes[1]
+    im = ax1.imshow(heat, origin="lower", cmap="viridis", interpolation="nearest")
+    wall_mask = np.ma.masked_where(grid_display == 0, grid_display)
+    ax1.imshow(wall_mask, origin="lower", cmap="gray_r", alpha=0.9, interpolation="nearest")
+
+    for i, (x, y) in enumerate(routers_display, start=1):
+        ax1.plot(x, y, "wo", markersize=6, markeredgecolor="black")
+        ax1.text(
+            x,
+            y + 3,
+            f"R{i}",
+            ha="center",
+            va="bottom",
+            bbox=dict(boxstyle="round,pad=0.2", facecolor="white", alpha=0.85),
+        )
+
+    ax1.set_title(f"Signal Heatmap (Threshold = {S_threshold} dBm)")
+    ax1.set_xticks([])
+    ax1.set_yticks([])
+
+    cbar = fig.colorbar(im, ax=axes.ravel().tolist(), fraction=0.025, pad=0.02)
+    cbar.set_label("Signal (dBm)")
+
+    plt.tight_layout()
+
+    save_path = os.path.join(images_dir, "optimized_placement.png")
+    plt.savefig(save_path, dpi=220, bbox_inches="tight")
+    plt.close(fig)
+
+    return save_path
+
+
+def save_results(routers_opt, routers_display, coverage_pct, avg_signal, meta, output_dir="outputs"):
+    """Save optimization results to JSON."""
+    os.makedirs(output_dir, exist_ok=True)
+
+    results = {
+        "routers_optimization_grid": [{"x": int(x), "y": int(y)} for x, y in routers_opt],
+        "routers_display_grid": [{"x": int(x), "y": int(y)} for x, y in routers_display],
+        "coverage_percent": float(coverage_pct),
+        "average_signal_dBm": float(avg_signal),
+        "grid_meta": meta,
+    }
+
+    results_path = os.path.join(output_dir, "optimization_results.json")
+    with open(results_path, "w", encoding="utf-8") as f:
+        json.dump(results, f, indent=2)
+
+    return results_path
+
+
+def main():
+    print("=" * 60)
+    print(" WiFi Router Placement Optimization - Full Pipeline")
+    print("=" * 60)
+
+    # Configuration
+    num_routers = 2
+    generations = 40
+    population_size = 30
+    seed = 42
+    output_dir = "outputs"
+
+    # Step 1: load optimization grid
+    print("\n[1/5] Loading optimization grid...")
+    grid_opt, meta = load_grid()
+    print(f"   • Optimization grid shape: {grid_opt.shape}")
+    print(f"   • Wall cells: {int((grid_opt == 1).sum())}")
+    print(f"   • Free cells: {int((grid_opt == 0).sum())}")
+
+    # Step 2: run GA
+    print("\n[2/5] Running GA...")
+    ga_result = run_ga(
+        grid_opt,
         num_routers=num_routers,
         generations=generations,
         population_size=population_size,
         seed=seed,
     )
-    
-    print(f"   • Best fitness (coverage): {result['best_fitness']:.2f}%")
-    print(f"   • Best router positions: {result['best_routers']}")
-    
-    return result
+    best_routers_opt = ga_result["best_routers"]
+    best_fitness = ga_result["best_fitness"]
 
+    print(f"   • Best routers (optimization grid): {best_routers_opt}")
+    print(f"   • Best fitness: {best_fitness:.2f}")
 
-# ============================================================
-# STEP 3: Calculate final coverage metrics (Member B)
-# ============================================================
-def calculate_coverage(routers, grid_str):
-    """Calculate coverage using Member B's signal physics."""
-    from member_B_signal_simulation_engine.signal_math import coverage_metrics
-    
-    coverage_pct, avg_signal = coverage_metrics(routers, grid_str)
-    
-    print(f"\n Signal Analysis (Member B):")
+    # Step 3: calculate signal metrics on optimization grid
+    print("\n[3/5] Calculating coverage metrics...")
+    coverage_pct, avg_signal = coverage_metrics(best_routers_opt, grid_opt)
     print(f"   • Coverage: {coverage_pct:.2f}%")
     print(f"   • Average signal: {avg_signal:.2f} dBm")
-    
-    return coverage_pct, avg_signal
 
-
-# ============================================================
-# STEP 4: Visualization (Member D)
-# ============================================================
-def visualize_results(grid_binary, routers, output_dir="outputs"):
-    """Generate visualization using Member D's code."""
-    import matplotlib.pyplot as plt
-    
-    # Import Member D's visualization utilities
-    sys.path.insert(0, os.path.join(REPO_ROOT, "member_D_visualization", "src"))
-    from visualizationD2 import (
-        calculate_coverage_for_routers,
-        calculate_coverage_stats,
-        plot_single_analysis,
+    # Step 4: load display grid and scale routers
+    print("\n[4/5] Generating visualization...")
+    grid_display = load_display_grid()
+    scale_x, scale_y = compute_scale_factor(grid_opt, grid_display)
+    best_routers_display = scale_routers_to_display(
+        best_routers_opt,
+        grid_display,
+        scale_x,
+        scale_y,
     )
-    
-    os.makedirs(os.path.join(output_dir, "images"), exist_ok=True)
-    
-    print(f"\n Generating visualizations...")
-    
-    # Calculate coverage map for visualization
-    coverage_map = calculate_coverage_for_routers(grid_binary, routers)
-    
-    # Generate heatmap
-    save_path = os.path.join(output_dir, "images", "optimized_placement.png")
-    coverage_pct, fig = plot_single_analysis(
-        grid_binary, coverage_map, routers, save_path=save_path
-    )
-    
-    plt.close(fig)
-    
-    print(f"   • Saved: {save_path}")
-    
-    return coverage_map
 
+    print(f"   • Display grid shape: {grid_display.shape}")
+    print(f"   • Scale factor: x={scale_x}, y={scale_y}")
+    print(f"   • Routers (display grid): {best_routers_display}")
 
-# ============================================================
-# STEP 5: Save results
-# ============================================================
-def save_results(routers, coverage_pct, avg_signal, meta, output_dir="outputs"):
-    """Save optimization results to JSON."""
-    os.makedirs(output_dir, exist_ok=True)
-    
-    results = {
-        "routers": [{"x": int(r[0]), "y": int(r[1])} for r in routers],
-        "coverage_percent": float(coverage_pct),
-        "average_signal_dBm": float(avg_signal),
-        "grid_meta": meta,
-    }
-    
-    results_path = os.path.join(output_dir, "optimization_results.json")
-    with open(results_path, "w") as f:
-        json.dump(results, f, indent=2)
-    
-    print(f"   • Saved: {results_path}")
-    
-    return results_path
+    image_path = visualize_results(grid_display, best_routers_display, output_dir=output_dir)
+    print(f"   • Saved image: {image_path}")
 
-
-# ============================================================
-# MAIN PIPELINE
-# ============================================================
-def main():
-    print("=" * 60)
-    print(" WiFi Router Placement Optimization - Full Pipeline")
-    print("=" * 60)
-    
-    # Configuration
-    NUM_ROUTERS = 3
-    GENERATIONS = 10  # Reduced for faster testing
-    POPULATION_SIZE = 10  # Reduced for faster testing
-    OUTPUT_DIR = "outputs"
-    DOWNSAMPLE_FACTOR = 8  # Reduce grid size for faster optimization
-    
-    # Step 1: Load grid (downsampled for optimization)
-    print("\n[1/5] Loading grid data (Person C)...")
-    grid_binary, meta = load_grid(downsample_factor=DOWNSAMPLE_FACTOR)
-    print(f"   • Grid shape: {grid_binary.shape} (downsampled {DOWNSAMPLE_FACTOR}x)")
-    print(f"   • Wall cells: {int(grid_binary.sum())}")
-    print(f"   • Free cells: {int(grid_binary.size - grid_binary.sum())}")
-    
-    # Step 2: Run GA optimization
-    print("\n[2/5] Running optimization (Member A)...")
-    ga_result = run_optimization(
-        grid_binary,  # GA expects numeric grid (0=free, 1=wall)
-        num_routers=NUM_ROUTERS,
-        generations=GENERATIONS,
-        population_size=POPULATION_SIZE,
-    )
-    best_routers = ga_result["best_routers"]
-    
-    # Step 3: Calculate final coverage
-    print("\n[3/5] Calculating signal coverage (Member B)...")
-    coverage_pct, avg_signal = calculate_coverage(best_routers, grid_binary)
-    
-    # Step 4: Generate visualizations (use full-res grid for display)
-    print("\n[4/5] Generating visualizations (Member D)...")
-    grid_full = np.load(os.path.join(REPO_ROOT, "grid.npy"))
-    h_full, w_full = grid_full.shape
-    # Scale router positions back to full resolution
-    # GA returns (x, y) but visualization expects (row, col) = (y, x)
-    # Also clamp to grid bounds
-    routers_full = [
-        (min(y * DOWNSAMPLE_FACTOR, h_full - 1), min(x * DOWNSAMPLE_FACTOR, w_full - 1))
-        for (x, y) in best_routers
-    ]
-    visualize_results(grid_full, routers_full, OUTPUT_DIR)
-    
-    # Step 5: Save results (with scaled positions)
+    # Step 5: save JSON results
     print("\n[5/5] Saving results...")
-    save_results(routers_full, coverage_pct, avg_signal, meta, OUTPUT_DIR)
-    
-    # Summary
+    results_path = save_results(
+        best_routers_opt,
+        best_routers_display,
+        coverage_pct,
+        avg_signal,
+        meta,
+        output_dir=output_dir,
+    )
+    print(f"   • Saved JSON: {results_path}")
+
     print("\n" + "=" * 60)
     print(" OPTIMIZATION COMPLETE")
     print("=" * 60)
-    print(f" Router Positions: {best_routers}")
+    print(f" Routers (opt grid): {best_routers_opt}")
+    print(f" Routers (display grid): {best_routers_display}")
     print(f" Coverage: {coverage_pct:.2f}%")
     print(f" Average Signal: {avg_signal:.2f} dBm")
-    print(f"\n Output files in: {OUTPUT_DIR}/")
-    print("   • optimization_results.json")
-    print("   • images/optimized_placement.png")
+    print(f" Best Fitness: {best_fitness:.2f}")
     print("=" * 60)
 
 

@@ -1,0 +1,19 @@
+{
+  "input_dxf": "D:\\Wifi_Planner\\house.dxf",
+  "strategy": "vector",
+  "entity_counts": {
+    "LWPOLYLINE": 88,
+    "CIRCLE": 3,
+    "LINE": 2,
+    "TEXT": 12
+  },
+  "display_grid_shape": [
+    1314,
+    1601
+  ],
+  "optimization_grid_shape": [
+    328,
+    400
+  ],
+  "output_dir": "D:\\Wifi_Planner"
+}
