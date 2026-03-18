@@ -1,48 +1,71 @@
 {
-  "routers": [
+  "routers_optimization_grid": [
     {
-      "x": 896,
-      "y": 168
+      "x": 66,
+      "y": 230
     },
     {
-      "x": 680,
-      "y": 624
-    },
-    {
-      "x": 352,
-      "y": 200
+      "x": 378,
+      "y": 282
     }
   ],
-  "coverage_percent": 100.0,
-  "average_signal_dBm": -47.81660870231226,
+  "routers_display_grid": [
+    {
+      "x": 264,
+      "y": 920
+    },
+    {
+      "x": 1512,
+      "y": 1128
+    }
+  ],
+  "coverage_percent": 99.9912798763328,
+  "average_signal_dBm": -47.05473709106445,
   "grid_meta": {
-    "source": "2D_GRID_FALLBACK",
-    "cell_size": null,
+    "source": "VECTOR_DXF",
+    "cell_size": 0.6888749999999999,
+    "line_sample_step": 0.17221874999999998,
+    "bounds": {
+      "min_x": 115.4,
+      "min_y": 114.0,
+      "max_x": 1217.6,
+      "max_y": 1018.2474586486817
+    },
+    "grid_shape": [
+      328,
+      400
+    ],
     "codes": {
       "FREE": 0,
       "WALL": 1
     },
-    "notes": "Loaded existing grid.npy generated from LINE/LWPOLYLINE DXF extraction.",
     "crop": {
       "cropped": true,
       "crop_box": {
         "y_min": 0,
-        "y_max": 905,
-        "x_min": 115,
-        "x_max": 806
+        "y_max": 1313,
+        "x_min": 0,
+        "x_max": 1600
       },
       "original_shape": [
-        906,
-        1104
+        1314,
+        1601
       ],
       "cropped_shape": [
-        906,
-        692
+        1314,
+        1601
       ]
     },
-    "cleanup": {
-      "method": "largest_connected_component"
+    "notes": "Generated from LINE/LWPOLYLINE/POLYLINE/ARC/CIRCLE entities using adaptive cell size.",
+    "entity_counts": {
+      "LWPOLYLINE": 88,
+      "CIRCLE": 3,
+      "LINE": 2,
+      "TEXT": 12
     },
-    "downsample_factor": 8
+    "strategy": "vector",
+    "input_dxf": "/Users/sitaram/Documents/GitHub/Wifi_Planner/residential.dxf",
+    "derived_from": "grid_display.npy",
+    "downsample_factor_for_optimization": 4
   }
 }

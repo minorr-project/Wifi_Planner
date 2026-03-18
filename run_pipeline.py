@@ -14,14 +14,16 @@ Outputs:
 import os
 import json
 import numpy as np
+import matplotlib
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+from scipy.ndimage import zoom as nd_zoom
 
-from member_A_genetic_Algorithm_core.ga_core import run_ga
-from member_B_signal_simulation_engine.signal_math import (
-    coverage_metrics,
-    best_signal,
-    S_threshold,
-)
+# Use the fast vectorized implementations from optimization.py
+# (ga_core/signal_math use pure-Python loops that are too slow for
+# a 328x400 grid — they would take hours per run)
+from optimization import _run_ga, _coverage_metrics, _signal_map
+from member_B_signal_simulation_engine.signal_math import S_threshold
 
 
 REPO_ROOT = os.path.dirname(os.path.abspath(__file__))
@@ -36,7 +38,7 @@ def load_grid():
         raise FileNotFoundError(
             "grid.npy not found.\n"
             "Run:\n"
-            "  python dxf_pipeline_general.py house.dxf ."
+            "  python dxf_pipeline_general.py residential.dxf ."
         )
 
     grid = np.load(grid_path).astype(np.uint8)
@@ -57,7 +59,7 @@ def load_display_grid():
         raise FileNotFoundError(
             "grid_display.npy not found.\n"
             "Run:\n"
-            "  python dxf_pipeline_general.py house.dxf ."
+            "  python dxf_pipeline_general.py residential.dxf ."
         )
 
     return np.load(grid_path).astype(np.uint8)
@@ -93,32 +95,31 @@ def scale_routers_to_display(routers_opt, grid_display, scale_x, scale_y):
     return routers_disp
 
 
-def make_dbm_heatmap(grid, routers):
-    """
-    Compute signal heatmap in dBm for free cells.
-    Walls are left as NaN.
-    """
-    h, w = grid.shape
-    heat = np.full((h, w), np.nan, dtype=float)
-
-    for y in range(h):
-        for x in range(w):
-            if grid[y, x] == 1:
-                continue
-            heat[y, x] = best_signal((x, y), routers, grid)
-
-    return heat
-
-
-def visualize_results(grid_display, routers_display, output_dir="outputs"):
+def visualize_results(
+    grid_display, routers_display,
+    grid_opt=None, routers_opt=None,
+    output_dir="outputs",
+):
     """
     Save a clean placement + heatmap visualization.
+    Heatmap is computed on the smaller opt grid then upscaled for speed.
     """
     images_dir = os.path.join(output_dir, "images")
     os.makedirs(images_dir, exist_ok=True)
 
-    heat = make_dbm_heatmap(grid_display, routers_display)
-    heat = np.clip(heat, -95, -30)
+    if grid_opt is not None and routers_opt is not None:
+        # Fast path: compute signal on small opt grid, then upscale
+        heat_s = np.clip(_signal_map(grid_opt, routers_opt), -95, -30)
+        nan_mask = np.isnan(heat_s)
+        th, tw = grid_display.shape
+        zh = th / grid_opt.shape[0]
+        zw = tw / grid_opt.shape[1]
+        filled = np.where(nan_mask, -200.0, heat_s)
+        heat = nd_zoom(filled, (zh, zw), order=1)
+        mask_up = nd_zoom(nan_mask.astype(float), (zh, zw), order=0)
+        heat = np.where(mask_up > 0.5, np.nan, heat)
+    else:
+        heat = np.clip(_signal_map(grid_display, routers_display), -95, -30)
 
     fig, axes = plt.subplots(1, 2, figsize=(14, 7))
 
@@ -141,7 +142,8 @@ def visualize_results(grid_display, routers_display, output_dir="outputs"):
 
     # Right: heatmap with wall overlay
     ax1 = axes[1]
-    im = ax1.imshow(heat, origin="lower", cmap="viridis", interpolation="nearest")
+    im = ax1.imshow(heat, origin="lower", cmap="viridis", interpolation="nearest",
+                    vmin=-95, vmax=-30)
     wall_mask = np.ma.masked_where(grid_display == 0, grid_display)
     ax1.imshow(wall_mask, origin="lower", cmap="gray_r", alpha=0.9, interpolation="nearest")
 
@@ -198,8 +200,8 @@ def main():
 
     # Configuration
     num_routers = 2
-    generations = 40
-    population_size = 30
+    generations = 20
+    population_size = 20
     seed = 42
     output_dir = "outputs"
 
@@ -210,24 +212,21 @@ def main():
     print(f"   • Wall cells: {int((grid_opt == 1).sum())}")
     print(f"   • Free cells: {int((grid_opt == 0).sum())}")
 
-    # Step 2: run GA
+    # Step 2: run GA (fast vectorized sampled fitness from optimization.py)
     print("\n[2/5] Running GA...")
-    ga_result = run_ga(
+    best_routers_opt = _run_ga(
         grid_opt,
         num_routers=num_routers,
         generations=generations,
         population_size=population_size,
         seed=seed,
     )
-    best_routers_opt = ga_result["best_routers"]
-    best_fitness = ga_result["best_fitness"]
 
     print(f"   • Best routers (optimization grid): {best_routers_opt}")
-    print(f"   • Best fitness: {best_fitness:.2f}")
 
-    # Step 3: calculate signal metrics on optimization grid
+    # Step 3: calculate signal metrics on optimization grid (vectorized)
     print("\n[3/5] Calculating coverage metrics...")
-    coverage_pct, avg_signal = coverage_metrics(best_routers_opt, grid_opt)
+    coverage_pct, avg_signal = _coverage_metrics(best_routers_opt, grid_opt)
     print(f"   • Coverage: {coverage_pct:.2f}%")
     print(f"   • Average signal: {avg_signal:.2f} dBm")
 
@@ -246,7 +245,11 @@ def main():
     print(f"   • Scale factor: x={scale_x}, y={scale_y}")
     print(f"   • Routers (display grid): {best_routers_display}")
 
-    image_path = visualize_results(grid_display, best_routers_display, output_dir=output_dir)
+    image_path = visualize_results(
+        grid_display, best_routers_display,
+        grid_opt=grid_opt, routers_opt=best_routers_opt,
+        output_dir=output_dir,
+    )
     print(f"   • Saved image: {image_path}")
 
     # Step 5: save JSON results
@@ -268,7 +271,6 @@ def main():
     print(f" Routers (display grid): {best_routers_display}")
     print(f" Coverage: {coverage_pct:.2f}%")
     print(f" Average Signal: {avg_signal:.2f} dBm")
-    print(f" Best Fitness: {best_fitness:.2f}")
     print("=" * 60)
 
 
