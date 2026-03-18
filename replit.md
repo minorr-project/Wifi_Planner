@@ -1,26 +1,45 @@
-# WiFi Planner - Grid Generation
+# WiFi Planner – Grid Generator
 
-## Overview
-Python CLI project that converts architectural floor plans (DXF/SketchUp export) into simulation-ready grids for indoor Wi-Fi planning.
+A web-based tool that converts architectural floor plans (DXF/SketchUp exports) into simulation-ready binary wall grids for indoor Wi-Fi planning.
 
-## Pipeline
-1. `flatten_3dface.py` - Extracts 3DFACE polygons from DXF and projects to 2D, saves `wall_faces_xy.npy`
-2. `rasterize_to_grid.py` - Rasterizes wall faces into a binary grid, cleans noise, crops, saves `grid.npy`, `grid_meta.json`, `grid_preview.png`
-3. `dxf_to_grid.py` - Alternative simpler approach using LINE/LWPOLYLINE entities
-4. `inspect_dxf.py` - Utility to inspect DXF file structure
+## Architecture
 
-## Key Files
-- `house.dxf` - Input floor plan
-- `grid.npy` - Output binary grid (1=wall, 0=free)
-- `grid_meta.json` - Grid metadata (bounds, cell size, crop info)
-- `grid_preview.png` - Visual preview of the grid
+- **Backend**: Flask web server (`app.py`) on port 5000
+- **Frontend**: Single-page HTML/JS UI (`templates/index.html`)
+- **Pipeline scripts**:
+  - `flatten_3dface.py` – Extracts 3DFACE entities from DXF and flattens them to 2D polygons → `wall_faces_xy.npy`
+  - `rasterize_to_grid.py` – Rasterizes the 2D polygons into a binary wall grid, cleans noise, crops → `grid.npy`, `grid_meta.json`, `grid_preview.png`
+  - `dxf_to_grid.py` – Alternative: processes LINE/LWPOLYLINE entities (simple DXF)
+  - `inspect_dxf.py` – Utility to inspect entity types in a DXF file
 
-## Dependencies
-- Python 3.12
-- ezdxf, numpy, matplotlib, scipy, scikit-learn, pillow
-- Listed in `requirements.txt`
+## Web UI Features
+
+- Upload any `.dxf` floor plan file (SketchUp / AutoCAD)
+- Run the full pipeline (extract → flatten → rasterize → clean → crop)
+- Live status + progress bar during pipeline execution
+- Visual preview of the generated wall grid
+- Download `grid.npy` and `grid_meta.json`
+- Grid metadata display (size, cell size, bounds)
+
+## Pipeline Output
+
+| File | Description |
+|------|-------------|
+| `grid.npy` | Binary NumPy array: 1=wall, 0=free space |
+| `grid_meta.json` | Cell size, bounds, grid shape, crop info |
+| `grid_preview.png` | Visual PNG of the wall grid |
+| `wall_faces_xy.npy` | Intermediate: 2D polygon list extracted from 3DFACE entities |
 
 ## Running
-```bash
-python flatten_3dface.py && python rasterize_to_grid.py
-```
+
+Start the web server workflow "Start Web App" (port 5000).
+
+## Dependencies
+
+- Flask
+- ezdxf
+- numpy
+- matplotlib
+- scikit-learn
+- scipy
+- pillow

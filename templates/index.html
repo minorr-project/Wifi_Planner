@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WiFi Planner – Grid Generator</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #0f1117;
+      color: #e2e8f0;
+      min-height: 100vh;
+    }
+
+    header {
+      background: linear-gradient(135deg, #1a1f2e 0%, #16213e 100%);
+      border-bottom: 1px solid #2d3748;
+      padding: 20px 32px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    header .logo {
+      width: 38px;
+      height: 38px;
+      background: linear-gradient(135deg, #4facfe, #00f2fe);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+    }
+
+    header h1 {
+      font-size: 20px;
+      font-weight: 700;
+      background: linear-gradient(135deg, #4facfe, #00f2fe);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    header p {
+      font-size: 13px;
+      color: #718096;
+      margin-top: 2px;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 32px 24px;
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+
+    @media (max-width: 800px) {
+      .container { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: #1a1f2e;
+      border: 1px solid #2d3748;
+      border-radius: 14px;
+      padding: 24px;
+    }
+
+    .card h2 {
+      font-size: 14px;
+      font-weight: 600;
+      color: #a0aec0;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 16px;
+    }
+
+    /* Drop zone */
+    .dropzone {
+      border: 2px dashed #2d3748;
+      border-radius: 10px;
+      padding: 28px 16px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+    }
+    .dropzone:hover, .dropzone.drag-over {
+      border-color: #4facfe;
+      background: rgba(79,172,254,0.05);
+    }
+    .dropzone input[type="file"] {
+      position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+    }
+    .dropzone .icon {
+      font-size: 32px;
+      margin-bottom: 10px;
+    }
+    .dropzone p {
+      font-size: 14px;
+      color: #718096;
+    }
+    .dropzone p span {
+      color: #4facfe;
+      font-weight: 500;
+    }
+    .dropzone .hint {
+      font-size: 12px;
+      color: #4a5568;
+      margin-top: 6px;
+    }
+
+    .file-badge {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(79,172,254,0.08);
+      border: 1px solid rgba(79,172,254,0.25);
+      border-radius: 8px;
+      padding: 10px 14px;
+      margin-top: 14px;
+      font-size: 13px;
+    }
+    .file-badge .dot {
+      width: 8px; height: 8px;
+      background: #48bb78;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .file-badge span { color: #e2e8f0; font-weight: 500; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 9px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-top: 14px;
+      letter-spacing: 0.02em;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #4facfe, #00f2fe);
+      color: #0f1117;
+    }
+    .btn-primary:hover:not(:disabled) {
+      opacity: 0.9;
+      transform: translateY(-1px);
+    }
+    .btn-primary:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    /* Status */
+    .status-box {
+      border-radius: 9px;
+      padding: 12px 14px;
+      font-size: 13px;
+      margin-top: 14px;
+      display: none;
+    }
+    .status-box.info { background: rgba(79,172,254,0.1); border: 1px solid rgba(79,172,254,0.2); color: #90cdf4; }
+    .status-box.success { background: rgba(72,187,120,0.1); border: 1px solid rgba(72,187,120,0.2); color: #9ae6b4; }
+    .status-box.error { background: rgba(252,129,74,0.1); border: 1px solid rgba(252,129,74,0.2); color: #fbb6a0; }
+
+    .progress-bar-wrap {
+      background: #2d3748;
+      border-radius: 999px;
+      height: 6px;
+      margin-top: 10px;
+      overflow: hidden;
+      display: none;
+    }
+    .progress-bar {
+      height: 100%;
+      background: linear-gradient(135deg, #4facfe, #00f2fe);
+      border-radius: 999px;
+      width: 0%;
+      transition: width 0.4s;
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 12px; height: 12px;
+      border: 2px solid rgba(79,172,254,0.3);
+      border-top-color: #4facfe;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-right: 6px;
+      vertical-align: middle;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Meta stats */
+    .meta-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 4px;
+    }
+    .meta-item {
+      background: #0f1117;
+      border: 1px solid #2d3748;
+      border-radius: 8px;
+      padding: 10px 12px;
+    }
+    .meta-item .label {
+      font-size: 11px;
+      color: #4a5568;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      margin-bottom: 4px;
+    }
+    .meta-item .value {
+      font-size: 16px;
+      font-weight: 700;
+      color: #e2e8f0;
+    }
+    .meta-item .unit {
+      font-size: 11px;
+      color: #718096;
+      font-weight: 400;
+    }
+
+    /* Downloads */
+    .download-list { margin-top: 4px; display: flex; flex-direction: column; gap: 8px; }
+    .download-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      background: #0f1117;
+      border: 1px solid #2d3748;
+      border-radius: 8px;
+      text-decoration: none;
+      color: #e2e8f0;
+      font-size: 13px;
+      transition: all 0.2s;
+    }
+    .download-item:hover {
+      border-color: #4facfe;
+      color: #4facfe;
+    }
+    .download-item .icon { font-size: 18px; flex-shrink: 0; }
+    .download-item .name { flex: 1; font-weight: 500; }
+    .download-item .desc { font-size: 11px; color: #4a5568; }
+    .download-item .arrow { color: #4a5568; font-size: 14px; }
+
+    /* Preview panel */
+    .preview-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .preview-wrap {
+      background: #0a0d14;
+      border: 1px solid #2d3748;
+      border-radius: 14px;
+      overflow: hidden;
+      min-height: 340px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+    .preview-wrap img {
+      max-width: 100%;
+      max-height: 560px;
+      object-fit: contain;
+      display: block;
+    }
+    .preview-wrap .placeholder {
+      text-align: center;
+      color: #4a5568;
+    }
+    .preview-wrap .placeholder .big-icon { font-size: 56px; margin-bottom: 12px; }
+    .preview-wrap .placeholder p { font-size: 14px; }
+
+    .preview-label {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      background: rgba(15,17,23,0.85);
+      border: 1px solid #2d3748;
+      border-radius: 6px;
+      padding: 4px 10px;
+      font-size: 11px;
+      color: #718096;
+      backdrop-filter: blur(4px);
+    }
+
+    .legend {
+      display: flex;
+      gap: 20px;
+      font-size: 12px;
+      color: #718096;
+      align-items: center;
+    }
+    .legend-item { display: flex; align-items: center; gap: 6px; }
+    .legend-dot { width: 10px; height: 10px; border-radius: 2px; }
+
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">📡</div>
+  <div>
+    <h1>WiFi Planner – Grid Generator</h1>
+    <p>Convert floor plans (DXF) into simulation-ready wall grids</p>
+  </div>
+</header>
+
+<div class="container">
+  <!-- Left column: controls -->
+  <div style="display: flex; flex-direction: column; gap: 20px;">
+
+    <!-- Upload -->
+    <div class="card">
+      <h2>Floor Plan</h2>
+      <div class="dropzone" id="dropzone">
+        <input type="file" id="fileInput" accept=".dxf" />
+        <div class="icon">🗂️</div>
+        <p>Drop your <span>.dxf</span> file here</p>
+        <p>or <span>click to browse</span></p>
+        <p class="hint">SketchUp / AutoCAD exports supported · Max 200 MB</p>
+      </div>
+      <div class="file-badge" id="fileBadge" style="display:none;">
+        <span class="dot"></span>
+        <span id="fileLabel">house.dxf</span>
+      </div>
+    </div>
+
+    <!-- Run -->
+    <div class="card">
+      <h2>Pipeline</h2>
+      <p style="font-size:13px;color:#718096;line-height:1.6;">Extracts 3D wall faces from the DXF, flattens them to 2D, and rasterizes a binary wall grid.</p>
+      <button class="btn btn-primary" id="runBtn" onclick="runPipeline()">▶ Run Pipeline</button>
+
+      <div class="status-box" id="statusBox"></div>
+      <div class="progress-bar-wrap" id="progressWrap">
+        <div class="progress-bar" id="progressBar"></div>
+      </div>
+    </div>
+
+    <!-- Downloads (hidden until ready) -->
+    <div class="card" id="downloadCard" style="display:none;">
+      <h2>Download Outputs</h2>
+      <div class="download-list">
+        <a class="download-item" href="/api/download/grid" download>
+          <span class="icon">🔢</span>
+          <div>
+            <div class="name">grid.npy</div>
+            <div class="desc">Binary wall grid (NumPy array)</div>
+          </div>
+          <span class="arrow">↓</span>
+        </a>
+        <a class="download-item" href="/api/download/meta" download>
+          <span class="icon">📋</span>
+          <div>
+            <div class="name">grid_meta.json</div>
+            <div class="desc">Scale, bounds &amp; crop metadata</div>
+          </div>
+          <span class="arrow">↓</span>
+        </a>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Right column: preview + meta -->
+  <div class="preview-panel">
+
+    <div class="preview-wrap" id="previewWrap">
+      <div class="placeholder" id="previewPlaceholder">
+        <div class="big-icon">🏠</div>
+        <p>Run the pipeline to see the wall grid preview</p>
+      </div>
+      <img id="previewImg" alt="Grid preview" style="display:none;" />
+      <span class="preview-label" id="previewLabel" style="display:none;">Grid Preview</span>
+    </div>
+
+    <div class="legend" id="legendRow" style="display:none;">
+      <div class="legend-item"><div class="legend-dot" style="background:#4facfe;"></div> Wall / Obstacle</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#0a0d14; border:1px solid #2d3748;"></div> Free Space</div>
+    </div>
+
+    <!-- Meta stats -->
+    <div class="card" id="metaCard" style="display:none;">
+      <h2>Grid Metadata</h2>
+      <div class="meta-grid" id="metaGrid"></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  let polling = null;
+
+  // ----- File upload -----
+  const dropzone = document.getElementById('dropzone');
+  const fileInput = document.getElementById('fileInput');
+
+  dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('drag-over'); });
+  dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag-over'));
+  dropzone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropzone.classList.remove('drag-over');
+    const files = e.dataTransfer.files;
+    if (files.length) uploadFile(files[0]);
+  });
+  fileInput.addEventListener('change', () => {
+    if (fileInput.files.length) uploadFile(fileInput.files[0]);
+  });
+
+  function uploadFile(file) {
+    showStatus('info', `Uploading ${file.name}…`);
+    const fd = new FormData();
+    fd.append('file', file);
+    fetch('/api/upload', { method: 'POST', body: fd })
+      .then(r => r.json())
+      .then(d => {
+        if (d.error) { showStatus('error', d.error); return; }
+        showStatus('success', `${d.filename} uploaded successfully.`);
+        document.getElementById('fileLabel').textContent = d.filename;
+        document.getElementById('fileBadge').style.display = 'flex';
+        document.getElementById('runBtn').disabled = false;
+      })
+      .catch(() => showStatus('error', 'Upload failed.'));
+  }
+
+  // ----- Pipeline -----
+  function runPipeline() {
+    document.getElementById('runBtn').disabled = true;
+    showStatus('info', '<span class="spinner"></span> Starting pipeline…');
+    document.getElementById('progressWrap').style.display = 'block';
+    setProgress(5);
+
+    fetch('/api/run', { method: 'POST' })
+      .then(r => r.json())
+      .then(d => {
+        if (d.error) {
+          showStatus('error', d.error);
+          document.getElementById('runBtn').disabled = false;
+          return;
+        }
+        startPolling();
+      })
+      .catch(() => {
+        showStatus('error', 'Failed to start pipeline.');
+        document.getElementById('runBtn').disabled = false;
+      });
+  }
+
+  function startPolling() {
+    if (polling) clearInterval(polling);
+    polling = setInterval(pollStatus, 1500);
+  }
+
+  function pollStatus() {
+    fetch('/api/status')
+      .then(r => r.json())
+      .then(data => {
+        const p = data.pipeline;
+        if (p.error) {
+          clearInterval(polling);
+          showStatus('error', '❌ ' + p.error);
+          document.getElementById('runBtn').disabled = false;
+          return;
+        }
+        if (p.running) {
+          showStatus('info', `<span class="spinner"></span> ${p.stage}: ${p.message}`);
+          setProgress(p.progress || 40);
+        }
+        if (p.done) {
+          clearInterval(polling);
+          setProgress(100);
+          showStatus('success', '✅ Pipeline complete!');
+          document.getElementById('runBtn').disabled = false;
+          loadResults(data);
+        }
+        // If not started yet and results already exist from a previous run
+        if (!p.running && !p.done && !p.error && data.results_ready) {
+          clearInterval(polling);
+          loadResults(data);
+        }
+      })
+      .catch(() => {});
+  }
+
+  function loadResults(data) {
+    // Show preview
+    const img = document.getElementById('previewImg');
+    img.src = '/api/preview?ts=' + Date.now();
+    img.style.display = 'block';
+    document.getElementById('previewPlaceholder').style.display = 'none';
+    document.getElementById('previewLabel').style.display = 'block';
+    document.getElementById('legendRow').style.display = 'flex';
+
+    // Downloads
+    document.getElementById('downloadCard').style.display = 'block';
+
+    // Metadata
+    if (data.meta && Object.keys(data.meta).length) {
+      renderMeta(data.meta);
+      document.getElementById('metaCard').style.display = 'block';
+    }
+  }
+
+  function renderMeta(meta) {
+    const grid = document.getElementById('metaGrid');
+    const cs = meta.cell_size ? meta.cell_size + ' units' : '–';
+    const shape = meta.crop && meta.crop.cropped_shape ? meta.crop.cropped_shape.join(' × ') : (meta.grid_shape ? meta.grid_shape.join(' × ') : '–');
+    const bounds = meta.bounds;
+    let width = '–', height = '–';
+    if (bounds) {
+      width = Math.round(bounds.maxx - bounds.minx);
+      height = Math.round(bounds.maxy - bounds.miny);
+    }
+    const items = [
+      { label: 'Grid Size', value: shape, unit: 'cells' },
+      { label: 'Cell Size', value: cs, unit: '' },
+      { label: 'Width', value: width, unit: 'units' },
+      { label: 'Height', value: height, unit: 'units' },
+    ];
+    grid.innerHTML = items.map(i => `
+      <div class="meta-item">
+        <div class="label">${i.label}</div>
+        <div class="value">${i.value} <span class="unit">${i.unit}</span></div>
+      </div>
+    `).join('');
+  }
+
+  function setProgress(pct) {
+    document.getElementById('progressBar').style.width = pct + '%';
+  }
+
+  function showStatus(type, msg) {
+    const box = document.getElementById('statusBox');
+    box.className = 'status-box ' + type;
+    box.innerHTML = msg;
+    box.style.display = 'block';
+  }
+
+  // ----- Init -----
+  fetch('/api/status')
+    .then(r => r.json())
+    .then(data => {
+      if (data.dxf_loaded) {
+        document.getElementById('fileLabel').textContent = data.dxf_filename;
+        document.getElementById('fileBadge').style.display = 'flex';
+        document.getElementById('runBtn').disabled = false;
+      } else {
+        document.getElementById('runBtn').disabled = true;
+      }
+      if (data.results_ready) {
+        loadResults(data);
+        document.getElementById('progressWrap').style.display = 'none';
+      }
+    });
+</script>
+</body>
+</html>

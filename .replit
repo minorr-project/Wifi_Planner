@@ -16,15 +16,20 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
-args = "Run Pipeline"
+args = "Start Web App"
 
 [[workflows.workflow]]
-name = "Run Pipeline"
+name = "Start Web App"
 author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "python flatten_3dface.py && python rasterize_to_grid.py"
+args = "python app.py"
+waitForPort = 5000
 
 [workflows.workflow.metadata]
-outputType = "console"
+outputType = "webview"
+
+[[ports]]
+localPort = 5000
+externalPort = 80
