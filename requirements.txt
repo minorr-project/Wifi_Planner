@@ -1,11 +1,4 @@
 ezdxf
-matplotlib
-numpy
-scikit-learn
-scipy
-pillow
-flask
-ezdxf
 flask
 matplotlib
 numpy
