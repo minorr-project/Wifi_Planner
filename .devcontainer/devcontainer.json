@@ -1,0 +1,18 @@
+{
+  "name": "WiFi Planner",
+  "build": {
+    "dockerfile": "../Dockerfile",
+    "context": ".."
+  },
+  "forwardPorts": [5000],
+  "portsAttributes": {
+    "5000": {
+      "label": "Flask App",
+      "onAutoForward": "notify"
+    }
+  },
+  "postCreateCommand": "mkdir -p outputs/images",
+  "remoteEnv": {
+    "MPLBACKEND": "Agg"
+  }
+}
