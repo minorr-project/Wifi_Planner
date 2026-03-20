@@ -1,19 +1,27 @@
 {
   "strategy": "ga",
-  "num_routers": 1,
+  "num_routers": 2,
   "routers_optimization_grid": [
     {
-      "x": 152,
-      "y": 85
+      "x": 66,
+      "y": 230
+    },
+    {
+      "x": 378,
+      "y": 282
     }
   ],
   "routers_display_grid": [
     {
-      "x": 608,
-      "y": 340
+      "x": 264,
+      "y": 921
+    },
+    {
+      "x": 1512,
+      "y": 1129
     }
   ],
-  "coverage_percent": 96.40730904911014,
-  "average_signal_dBm": -51.888084411621094,
-  "image_path": "/Users/sitaram/Documents/GitHub/Wifi_Planner/outputs/images/ga_placement.png"
+  "coverage_percent": 99.9912798763328,
+  "average_signal_dBm": -47.05473709106445,
+  "image_path": "C:\\Users\\riwaj\\OneDrive\\Documents\\GitHub\\Wifi_Planner\\outputs\\images\\ga_placement.png"
 }
