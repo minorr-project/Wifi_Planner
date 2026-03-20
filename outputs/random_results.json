@@ -3,17 +3,17 @@
   "num_routers": 1,
   "routers_optimization_grid": [
     {
-      "x": 287,
-      "y": 279
+      "x": 158,
+      "y": 176
     }
   ],
   "routers_display_grid": [
     {
-      "x": 1148,
-      "y": 1117
+      "x": 632,
+      "y": 705
     }
   ],
-  "coverage_percent": 93.70010701969956,
-  "average_signal_dBm": -57.09513473510742,
-  "image_path": "/Users/sitaram/Documents/GitHub/Wifi_Planner/outputs/images/random_placement.png"
+  "coverage_percent": 86.5614966903167,
+  "average_signal_dBm": -58.30999755859375,
+  "image_path": "C:\\Users\\riwaj\\OneDrive\\Documents\\GitHub\\Wifi_Planner\\outputs\\images\\random_placement.png"
 }
