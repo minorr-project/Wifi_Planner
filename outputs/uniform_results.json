@@ -1,19 +1,27 @@
 {
   "strategy": "uniform",
-  "num_routers": 1,
+  "num_routers": 2,
   "routers_optimization_grid": [
     {
-      "x": 200,
+      "x": 100,
+      "y": 164
+    },
+    {
+      "x": 300,
       "y": 164
     }
   ],
   "routers_display_grid": [
     {
-      "x": 800,
+      "x": 400,
+      "y": 657
+    },
+    {
+      "x": 1200,
       "y": 657
     }
   ],
-  "coverage_percent": 92.35324428237345,
-  "average_signal_dBm": -58.238494873046875,
+  "coverage_percent": 99.76931309207659,
+  "average_signal_dBm": -46.57630920410156,
   "image_path": "/Users/sitaram/Documents/GitHub/Wifi_Planner/outputs/images/uniform_placement.png"
 }

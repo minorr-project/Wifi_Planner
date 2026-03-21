@@ -1,19 +1,27 @@
 {
   "strategy": "random",
-  "num_routers": 1,
+  "num_routers": 2,
   "routers_optimization_grid": [
     {
-      "x": 287,
-      "y": 279
+      "x": 210,
+      "y": 78
+    },
+    {
+      "x": 397,
+      "y": 148
     }
   ],
   "routers_display_grid": [
     {
-      "x": 1148,
-      "y": 1117
+      "x": 840,
+      "y": 312
+    },
+    {
+      "x": 1588,
+      "y": 592
     }
   ],
-  "coverage_percent": 93.70010701969956,
-  "average_signal_dBm": -57.09513473510742,
+  "coverage_percent": 98.11248959530698,
+  "average_signal_dBm": -47.87827682495117,
   "image_path": "/Users/sitaram/Documents/GitHub/Wifi_Planner/outputs/images/random_placement.png"
 }
