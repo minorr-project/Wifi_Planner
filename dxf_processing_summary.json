@@ -1,19 +1,16 @@
 {
-  "input_dxf": "/home/runner/workspace/residential.dxf",
+  "input_dxf": "C:\\Users\\riwaj\\OneDrive\\Documents\\GitHub\\Wifi_Planner\\refined_residential.dxf",
   "strategy": "vector",
   "entity_counts": {
-    "LWPOLYLINE": 88,
-    "CIRCLE": 3,
-    "LINE": 2,
-    "TEXT": 12
+    "LINE": 19
   },
   "display_grid_shape": [
-    1314,
+    1217,
     1601
   ],
   "optimization_grid_shape": [
-    328,
+    304,
     400
   ],
-  "output_dir": "/home/runner/workspace"
+  "output_dir": "C:\\Users\\riwaj\\OneDrive\\Documents\\GitHub\\Wifi_Planner"
 }
