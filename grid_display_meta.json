@@ -1,15 +1,15 @@
 {
   "source": "VECTOR_DXF",
-  "cell_size": 0.6888749999999999,
-  "line_sample_step": 0.17221874999999998,
+  "cell_size": 0.376875,
+  "line_sample_step": 0.09421875,
   "bounds": {
-    "min_x": 115.4,
-    "min_y": 114.0,
-    "max_x": 1217.6,
-    "max_y": 1018.2474586486817
+    "min_x": 0.0,
+    "min_y": 0.0,
+    "max_x": 603.0,
+    "max_y": 458.0
   },
   "grid_shape": [
-    1314,
+    1217,
     1601
   ],
   "codes": {
@@ -20,26 +20,23 @@
     "cropped": true,
     "crop_box": {
       "y_min": 0,
-      "y_max": 1313,
+      "y_max": 1216,
       "x_min": 0,
       "x_max": 1600
     },
     "original_shape": [
-      1314,
+      1217,
       1601
     ],
     "cropped_shape": [
-      1314,
+      1217,
       1601
     ]
   },
   "notes": "Generated from LINE/LWPOLYLINE/POLYLINE/ARC/CIRCLE entities using adaptive cell size.",
   "entity_counts": {
-    "LWPOLYLINE": 88,
-    "CIRCLE": 3,
-    "LINE": 2,
-    "TEXT": 12
+    "LINE": 19
   },
   "strategy": "vector",
-  "input_dxf": "C:\\Users\\riwaj\\OneDrive\\Documents\\GitHub\\Wifi_Planner\\residential.dxf"
+  "input_dxf": "C:\\Users\\riwaj\\OneDrive\\Documents\\GitHub\\Wifi_Planner\\refined_residential.dxf"
 }

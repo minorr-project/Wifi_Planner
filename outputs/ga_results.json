@@ -3,17 +3,17 @@
   "num_routers": 1,
   "routers_optimization_grid": [
     {
-      "x": 152,
-      "y": 85
+      "x": 287,
+      "y": 142
     }
   ],
   "routers_display_grid": [
     {
-      "x": 608,
-      "y": 340
+      "x": 1148,
+      "y": 568
     }
   ],
-  "coverage_percent": 96.40730904911014,
-  "average_signal_dBm": -51.888084411621094,
+  "coverage_percent": 100.0,
+  "average_signal_dBm": -47.1032600402832,
   "image_path": "C:\\Users\\riwaj\\OneDrive\\Documents\\GitHub\\Wifi_Planner\\outputs\\images\\ga_placement.png"
 }

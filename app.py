@@ -3,6 +3,7 @@ import sys
 import json
 import threading
 import subprocess
+import numpy as np
 from flask import Flask, render_template, request, jsonify, send_file
 from werkzeug.utils import secure_filename
 
@@ -32,6 +33,29 @@ optimization_status = {
     "strategy": None,
     "result": None,
 }
+
+
+def grid_results_ready():
+    return os.path.exists("grid.npy") and os.path.exists("grid_meta.json")
+
+
+def ensure_preview_from_grid(grid_path, preview_path, title):
+    if os.path.exists(preview_path):
+        return True
+    if not os.path.exists(grid_path):
+        return False
+
+    import matplotlib.pyplot as plt
+
+    grid = np.load(grid_path)
+    plt.figure(figsize=(8, 8))
+    plt.imshow(grid, origin="lower", cmap="gray")
+    plt.title(title)
+    plt.axis("off")
+    plt.tight_layout()
+    plt.savefig(preview_path, dpi=200, bbox_inches="tight")
+    plt.close()
+    return True
 
 
 def allowed_file(filename):
@@ -112,11 +136,7 @@ def index():
 
 @app.route("/api/status")
 def api_status():
-    results_ready = (
-        os.path.exists("grid.npy")
-        and os.path.exists("grid_meta.json")
-        and os.path.exists("grid_preview.png")
-    )
+    results_ready = grid_results_ready()
     dxf_exists = current_dxf is not None and os.path.exists(current_dxf)
     meta = {}
     if os.path.exists("grid_meta.json"):
@@ -219,7 +239,7 @@ def api_preview():
 
 @app.route("/api/preview/opt")
 def api_preview_opt():
-    if not os.path.exists("grid_preview.png"):
+    if not ensure_preview_from_grid("grid.npy", "grid_preview.png", "Optimization Grid"):
         return jsonify({"error": "No optimization preview available"}), 404
     return send_file("grid_preview.png", mimetype="image/png")
 
