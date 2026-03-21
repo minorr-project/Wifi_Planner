@@ -202,7 +202,30 @@
     }
 
     /* Grid preview sub-tabs */
-    .sub-tabs { display: flex; gap: 6px; padding: 12px 12px 0; }
+    #previewWrap {
+      display: block;
+      padding: 52px 12px 12px;
+    }
+    #previewWrap img {
+      margin: 0 auto;
+      max-height: 520px;
+    }
+    #previewWrap .placeholder {
+      min-height: 320px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .sub-tabs {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      display: flex;
+      gap: 6px;
+      padding: 0;
+      z-index: 2;
+    }
     .sub-tab {
       padding: 5px 12px; border-radius: 6px; border: 1px solid #2d3748;
       background: #0f1117; color: #718096; font-size: 11px; font-weight: 600;
